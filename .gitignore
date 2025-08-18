@@ -1,0 +1,161 @@
+## =========================
+## OS / Editores
+## =========================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux / Vim
+*~
+*.swp
+*.swo
+
+# JetBrains Rider / IntelliJ
+.idea/
+*.iml
+.idea.*
+
+# Visual Studio / VS for Mac
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.rsuser
+
+# VS Code
+.vscode/
+.history/
+
+## =========================
+## .NET / Build
+## =========================
+bin/
+obj/
+out/
+[Bb]uild/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+Logs/
+*.log
+
+# Publicações
+publish/
+dist/
+artifacts/
+
+# Testes e Cobertura
+TestResults/
+*.trx
+*.coverage
+*.coveragexml
+coverage/
+coverage-*/
+lcov.info
+*.opencover.xml
+
+# NuGet
+*.nupkg
+*.snupkg
+# Caso use pasta local de packages (geralmente não)
+packages/
+# Restaurar automaticamente
+project.lock.json
+project.assets.json
+*.nuget.props
+*.nuget.targets
+
+## =========================
+## Configs / Segredos (locais)
+## =========================
+# Variáveis de ambiente
+.env
+.env.*
+**/.env
+**/.env.*
+
+# AppSettings locais (mantenha os que NÃO têm segredos)
+appsettings.Local.json
+appsettings.*.Local.json
+**/appsettings.Local.json
+**/appsettings.*.Local.json
+
+# User Secrets (se por acaso alguém colocar no repo – normalmente ficam fora)
+secrets.json
+**/secrets.json
+
+# Certificados/Chaves (dev)
+*.pfx
+*.p12
+*.cer
+*.pem
+*.key
+
+## =========================
+## EF Core (manter Migrations versionadas!)
+## =========================
+# NÃO ignore a pasta Migrations/
+# Se tiver snapshots temporários:
+**/Migrations/**/obj/
+
+## =========================
+## Bancos locais (SQLite / SQL Server arquivos)
+## =========================
+# SQLite
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# SQL Server arquivos locais (se usar MDF/LDF no repo – não recomendado)
+*.mdf
+*.ldf
+*.ndf
+*.bak
+*.trn
+
+## =========================
+## Docker / Compose
+## =========================
+# Overrides e arquivos locais
+docker-compose.override.yml
+docker-compose.local.yml
+.docker/
+docker/
+**/docker-data/
+**/mssql_data/
+**/data/
+**/storage/
+
+## =========================
+## Ferramentas / Analizadores
+## =========================
+# ReSharper / Rider caches
+_ReSharper.Caches/
+.ReSharper*/
+resharper-cache/
+
+# Sonar / Analyzers
+.sonar/
+.scannerwork/
+
+## =========================
+## Artefatos gerados (Swagger/NSwag, etc.)
+## =========================
+# Clientes gerados
+Generated/
+**/Generated/
+**/ApiClient/
+**/ApiClients/
+
+# Arquivos estáticos gerados
+wwwroot/swagger/
+wwwroot/assets/
