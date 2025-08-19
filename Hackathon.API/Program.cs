@@ -1,5 +1,5 @@
 using System.Data;
-using Hackathon.API.Persistence.Produtos;
+using Hackathon.Infrastructure.DependencyInjection;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,26 +12,8 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddSingleton<Func<IDbConnection>>(_ =>
-{
-    var cs = builder.Configuration.GetConnectionString("ProdutosDb")!;
-    return () =>
-    {
-        var cn = new SqlConnection(cs);
-        cn.Open(); 
-        return cn;
-    };
-});
-
-builder.Services.AddDbContext<ProdutosDbContext>(o =>
-    o.UseSqlServer(builder.Configuration.GetConnectionString("ProdutosDb"),
-            sql => sql.EnableRetryOnFailure())   // resiliente p/ rede
-        .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking));
-
-// Repositório remoto
-//builder.Services.AddScoped<IProdutoReadRepository, EfProdutoReadRepository>();
-builder.Services.AddScoped<IProdutoReadRepository, SqlServerProdutoReadRepository>();
-
+// Configuração da infraestrutura isolada
+builder.Services.AddInfrastructure(builder.Configuration);
 
 var app = builder.Build();
 

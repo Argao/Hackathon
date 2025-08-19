@@ -25,7 +25,13 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Services\" />
+      <ProjectReference Include="..\Hackathon.Infrastructure\Hackathon.Infrastructure.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Reference Include="Hackathon.API">
+        <HintPath>bin\Debug\net8.0\Hackathon.API.dll</HintPath>
+      </Reference>
     </ItemGroup>
 
 </Project>
