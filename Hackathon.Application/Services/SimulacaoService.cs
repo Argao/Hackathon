@@ -22,6 +22,7 @@ public class SimulacaoService : ISimulacaoService
     private readonly IValidator<RealizarSimulacaoCommand> _simulacaoValidator;
     private readonly IValidator<ListarSimulacoesQuery> _listarValidator;
     private readonly IValidator<ObterVolumeSimuladoQuery> _volumeValidator;
+    private readonly IEventHubService _eventHubService;
 
     public SimulacaoService(
         ICachedProdutoService cachedProdutoService,
@@ -29,7 +30,8 @@ public class SimulacaoService : ISimulacaoService
         IEnumerable<ICalculadoraAmortizacao> calculadoras,
         IValidator<RealizarSimulacaoCommand> simulacaoValidator,
         IValidator<ListarSimulacoesQuery> listarValidator,
-        IValidator<ObterVolumeSimuladoQuery> volumeValidator)
+        IValidator<ObterVolumeSimuladoQuery> volumeValidator,
+        IEventHubService eventHubService)
     {
         _cachedProdutoService = cachedProdutoService;
         _simulacaoRepository = simulacaoRepository;
@@ -37,6 +39,7 @@ public class SimulacaoService : ISimulacaoService
         _simulacaoValidator = simulacaoValidator;
         _listarValidator = listarValidator;
         _volumeValidator = volumeValidator;
+        _eventHubService = eventHubService;
     }
 
     /// <summary>
@@ -89,8 +92,23 @@ public class SimulacaoService : ISimulacaoService
             )).ToList()
         );
 
-        // Persistir simulação
-        await _simulacaoRepository.AdicionarAsync(simulacao, ct);
+        // Executar persistência e envio ao EventHub em paralelo para máxima performance
+        var persistirTask = _simulacaoRepository.AdicionarAsync(simulacao, ct);
+        var eventhubTask = _eventHubService.EnviarSimulacaoAsync(result, ct);
+
+        try
+        {
+            // Aguarda ambas as operações em paralelo
+            await Task.WhenAll(persistirTask, eventhubTask);
+        }
+        catch (Exception)
+        {
+            // Se o EventHub falhar, mas a persistência for bem-sucedida, 
+            // ainda retornamos sucesso pois o requisito principal foi atendido
+            // O log de erro já foi registrado no EventHubService
+            await persistirTask; // Garante que a persistência foi concluída
+        }
+
         return Result<SimulacaoResult>.Success(result);
     }
 

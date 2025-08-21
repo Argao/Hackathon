@@ -9,6 +9,7 @@ using Hackathon.Domain.Interfaces.Repositories;
 using Hackathon.Domain.Interfaces.Services;
 using Hackathon.Domain.Services;
 using Hackathon.Infrastructure.Context;
+using Hackathon.Infrastructure.EventHub;
 using Hackathon.Infrastructure.Repositories;
 using Mapster;
 using Microsoft.Data.SqlClient;
@@ -55,6 +56,9 @@ public static class ServiceCollectionExtensions
         // Application Services
         services.AddScoped<ISimulacaoService, SimulacaoService>();
         services.AddScoped<ICachedProdutoService, CachedProdutoService>();
+
+        // EventHub Service - Singleton para reutilizar connection pool
+        services.AddSingleton<IEventHubService, EventHubService>();
 
         // Cache simples para produtos
         services.AddMemoryCache(options =>
