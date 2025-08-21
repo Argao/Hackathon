@@ -5,12 +5,6 @@
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-        <!-- 🚀 Native AOT Configuration - DESABILITADO (MVC não suporta AOT ainda) -->
-        <PublishAot>false</PublishAot>
-        <!-- <RuntimeIdentifier>linux-x64</RuntimeIdentifier> -->
-        <!-- <InvariantGlobalization>true</InvariantGlobalization> -->
-        <!-- <OptimizationPreference>Speed</OptimizationPreference> -->
-        <!-- <TrimmerDefaultAction>link</TrimmerDefaultAction> -->
     </PropertyGroup>
 
     <ItemGroup>
