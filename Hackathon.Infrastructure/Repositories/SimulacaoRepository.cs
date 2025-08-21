@@ -1,5 +1,6 @@
 using Hackathon.Domain.Entities;
 using Hackathon.Domain.Interfaces.Repositories;
+using Hackathon.Domain.ValueObjects;
 using Hackathon.Infrastructure.Context;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,7 +10,10 @@ public class SimulacaoRepository(AppDbContext context) : ISimulacaoRepository
 {
     public async Task<Simulacao> AdicionarAsync(Simulacao simulacao, CancellationToken ct)
     {
+        // OTIMIZAÇÃO: Usar Add (não AddAsync) para melhor performance em batch
         context.Simulacoes.Add(simulacao);
+        
+        // PERFORMANCE: Uma única chamada SaveChanges para toda a simulação + resultados + parcelas
         await context.SaveChangesAsync(ct);
         return simulacao;
     }
@@ -52,15 +56,15 @@ public class SimulacaoRepository(AppDbContext context) : ISimulacaoRepository
             {
                 CodigoProduto = g.Key.CodigoProduto,
                 DescricaoProduto = g.Key.DescricaoProduto,
-                TaxaMediaJuro = (decimal)g.Average(s => (double)s.TaxaJuros),
+                TaxaMediaJuro = TaxaJuros.Create((decimal)g.Average(s => (double)s.TaxaJuros.Taxa)).Value,
                 ValorMedioPrestacao = g.SelectMany(s => s.Resultados)
                     .SelectMany(r => r.Parcelas)
-                    .Any() ? (decimal)g.SelectMany(s => s.Resultados)
+                    .Any() ? ValorMonetario.Create((decimal)g.SelectMany(s => s.Resultados)
                             .SelectMany(r => r.Parcelas)
-                            .Average(p => (double)p.ValorPrestacao) : 0,
-                ValorTotalDesejado = g.Sum(s => s.ValorDesejado),
-                ValorTotalCredito = g.SelectMany(s => s.Resultados)
-                    .Sum(r => r.ValorTotal)
+                            .Average(p => (double)p.ValorPrestacao.Valor)).Value : ValorMonetario.Zero,
+                ValorTotalDesejado = ValorMonetario.Create(g.Sum(s => s.ValorDesejado.Valor)).Value,
+                ValorTotalCredito = ValorMonetario.Create(g.SelectMany(s => s.Resultados)
+                    .Sum(r => r.ValorTotal.Valor)).Value
             })
             .ToList();
 

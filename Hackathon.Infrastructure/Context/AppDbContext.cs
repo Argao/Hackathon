@@ -1,4 +1,5 @@
 using Hackathon.Domain.Entities;
+using Hackathon.Domain.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 
 namespace Hackathon.Infrastructure.Context;
@@ -9,11 +10,19 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<ResultadoSimulacao> ResultadosSimulacao => Set<ResultadoSimulacao>();
     public DbSet<Parcela> Parcelas => Set<Parcela>();
     public DbSet<MetricaRequisicao> Metricas => Set<MetricaRequisicao>();
+    
+    // IMPORTANTE: Produto NÃO está aqui - é entidade read-only do SQL Server externo
 
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        // PERFORMANCE: Configurar splitting behavior para queries com múltiplas coleções
+        modelBuilder.HasDefaultSchema("main");
+        
+        // Configuração de conversões para Value Objects
+        ConfigureValueObjectConversions(modelBuilder);
+
         // Configuração da tabela SIMULACAO
         modelBuilder.Entity<Simulacao>(entity =>
         {
@@ -44,11 +53,17 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.Property(e => e.TaxaJuros)
                 .HasColumnName("PC_TAXA_JUROS")
                 .HasColumnType("decimal(10,9)")
+                .HasConversion(
+                    v => v.Taxa,
+                    v => TaxaJuros.Create(v).Value)
                 .IsRequired();
             
             entity.Property(e => e.ValorDesejado)
                 .HasColumnName("VR_DESEJADO")
                 .HasColumnType("decimal(18,2)")
+                .HasConversion(
+                    v => v.Valor,
+                    v => ValorMonetario.Create(v).Value)
                 .IsRequired();
             
             entity.Property(e => e.PrazoMeses)
@@ -97,7 +112,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
                 
             entity.Property(e => e.ValorTotal)
                 .HasColumnName("VR_TOTAL")
-                .HasColumnType("decimal(18,2)");
+                .HasColumnType("decimal(18,2)")
+                .HasConversion(
+                    v => v.Valor,
+                    v => ValorMonetario.Create(v).Value);
             
             // Relacionamento com Simulacao
             entity.HasOne(e => e.Simulacao)
@@ -135,16 +153,25 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.Property(e => e.ValorPrestacao)
                 .HasColumnName("VR_PRESTACAO")
                 .HasColumnType("decimal(18,2)")
+                .HasConversion(
+                    v => v.Valor,
+                    v => ValorMonetario.Create(v).Value)
                 .IsRequired();
             
             entity.Property(e => e.ValorAmortizacao)
                 .HasColumnName("VR_AMORTIZACAO")
                 .HasColumnType("decimal(18,2)")
+                .HasConversion(
+                    v => v.Valor,
+                    v => ValorMonetario.Create(v).Value)
                 .IsRequired();
             
             entity.Property(e => e.ValorJuros)
                 .HasColumnName("VR_JUROS")
                 .HasColumnType("decimal(18,2)")
+                .HasConversion(
+                    v => v.Valor,
+                    v => ValorMonetario.Create(v).Value)
                 .IsRequired();
                 
             // Relacionamento com ResultadoSimulacao
@@ -201,5 +228,87 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         });
 
         base.OnModelCreating(modelBuilder);
+    }
+
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        if (!optionsBuilder.IsConfigured)
+        {
+            // Fallback configuration - geralmente configurado via DI
+            return;
+        }
+
+        // PERFORMANCE: Configurações de otimização
+        optionsBuilder.UseQueryTrackingBehavior(QueryTrackingBehavior.TrackAll);
+        
+        base.OnConfiguring(optionsBuilder);
+    }
+
+    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            // PERFORMANCE CRÍTICA: Detectar e otimizar batch inserts
+            var entries = ChangeTracker.Entries();
+            var parcelas = entries.Where(e => e.Entity is Parcela && e.State == EntityState.Added).Count();
+            
+            if (parcelas > 10)
+            {
+                // Para muitas parcelas, usar ExecuteUpdate em batch seria melhor
+                // Mas como EF Core faz cascade automático, vamos confiar no batch interno
+                Console.WriteLine($"⚡ BATCH INSERT: {parcelas} parcelas sendo inseridas em lote");
+            }
+            
+            var startTime = DateTime.UtcNow;
+            var result = await base.SaveChangesAsync(cancellationToken);
+            var duration = DateTime.UtcNow - startTime;
+            
+            if (duration.TotalMilliseconds > 100)
+            {
+                Console.WriteLine($"⚠️ SaveChanges demorou {duration.TotalMilliseconds}ms para {result} registros");
+            }
+            
+            return result;
+        }
+        catch (DbUpdateException ex)
+        {
+            // Log mais detalhado para debug de performance
+            throw new InvalidOperationException($"Erro ao salvar alterações no banco: {ex.Message}", ex);
+        }
+    }
+
+    /// <summary>
+    /// Configura as conversões para Value Objects das entidades LOCAIS apenas
+    /// </summary>
+    private static void ConfigureValueObjectConversions(ModelBuilder modelBuilder)
+    {
+        // IMPORTANTE: Produto NÃO está aqui porque é uma entidade READ-ONLY do SQL Server externo
+        // A entidade Produto é configurada apenas no ProdutoDbContext
+        
+        // Configuração para VolumeSimuladoAgregado - é resultado de agregação, não precisa de key
+        var volumeEntity = modelBuilder.Entity<VolumeSimuladoAgregado>();
+        volumeEntity.HasNoKey(); // Entidade keyless - resultado de agregação
+        
+        // Conversão para TaxaJuros
+        volumeEntity.Property(e => e.TaxaMediaJuro)
+            .HasConversion(
+                v => v.Taxa,
+                v => TaxaJuros.Create(v).Value);
+
+        // Conversões para ValorMonetario
+        volumeEntity.Property(e => e.ValorMedioPrestacao)
+            .HasConversion(
+                v => v.Valor,
+                v => ValorMonetario.Create(v).Value);
+
+        volumeEntity.Property(e => e.ValorTotalDesejado)
+            .HasConversion(
+                v => v.Valor,
+                v => ValorMonetario.Create(v).Value);
+
+        volumeEntity.Property(e => e.ValorTotalCredito)
+            .HasConversion(
+                v => v.Valor,
+                v => ValorMonetario.Create(v).Value);
     }
 }

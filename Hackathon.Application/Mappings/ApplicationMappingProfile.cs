@@ -2,6 +2,7 @@ using Mapster;
 using Hackathon.Application.Commands;
 using Hackathon.Application.Results;
 using Hackathon.Domain.Entities;
+using Hackathon.Domain.ValueObjects;
 
 namespace Hackathon.Application.Mappings;
 
@@ -19,7 +20,7 @@ public static class ApplicationMappingProfile
             .Map(dest => dest.DescricaoProduto, src => src.Produto.Descricao)
             .Map(dest => dest.TaxaJuros, src => src.Produto.TaxaMensal)
             .Map(dest => dest.PrazoMeses, src => (short)src.Command.Prazo)
-            .Map(dest => dest.ValorDesejado, src => src.Command.Valor)
+            .Map(dest => dest.ValorDesejado, src => ValorMonetario.Create(src.Command.Valor).Value)
             .Map(dest => dest.DataReferencia, src => DateOnly.FromDateTime(DateTime.Today))
             .Ignore(dest => dest.IdSimulacao)
             .Ignore(dest => dest.Resultados);

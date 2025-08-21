@@ -1,4 +1,5 @@
 using Hackathon.Domain.Enums;
+using Hackathon.Domain.ValueObjects;
 
 namespace Hackathon.Domain.Entities;
 
@@ -10,5 +11,5 @@ public class ResultadoSimulacao
     public Simulacao Simulacao { get; set; } = null!;
     public ICollection<Parcela> Parcelas { get; set; } = new List<Parcela>();
     
-    public decimal ValorTotal { get; set; }
+    public ValorMonetario ValorTotal { get; set; }
 }

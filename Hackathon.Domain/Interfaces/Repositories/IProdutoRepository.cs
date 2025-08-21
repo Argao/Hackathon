@@ -2,9 +2,14 @@ using Hackathon.Domain.Entities;
 
 namespace Hackathon.Domain.Interfaces.Repositories;
 
+/// <summary>
+/// Repository para produtos read-only do SQL Server externo
+/// OTIMIZADO: Busca todos os produtos (apenas 4) e usa cache em memória
+/// </summary>
 public interface IProdutoRepository
 {
-    Task<Produto?> GetProdutoAdequadoAsync(decimal valor, int prazo, CancellationToken ct);
-    Task<Produto?> GetByIdAsync(int codigo, CancellationToken ct = default);
+    /// <summary>
+    /// Busca todos os produtos - ÚNICO método necessário (filtro feito em memória)
+    /// </summary>
     Task<IEnumerable<Produto>?> GetAllAsync(CancellationToken ct = default);
 }

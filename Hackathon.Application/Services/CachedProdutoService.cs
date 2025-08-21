@@ -1,5 +1,6 @@
 using Hackathon.Domain.Entities;
 using Hackathon.Domain.Interfaces.Repositories;
+using Hackathon.Domain.ValueObjects;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 
@@ -10,7 +11,7 @@ namespace Hackathon.Application.Services;
 /// </summary>
 public interface ICachedProdutoService
 {
-    Task<Produto?> GetProdutoAdequadoAsync(decimal valor, int prazo, CancellationToken ct = default);
+    Task<Produto?> GetProdutoAdequadoAsync(ValorMonetario valor, PrazoMeses prazo, CancellationToken ct = default);
     Task<IEnumerable<Produto>?> GetAllAsync(CancellationToken ct = default);
     void InvalidateCache();
 }
@@ -21,7 +22,7 @@ public class CachedProdutoService : ICachedProdutoService
     private readonly IMemoryCache _cache;
     private readonly ILogger<CachedProdutoService> _logger;
     
-    private const int CACHE_DURATION_MINUTES = 5;
+    private const int CACHE_DURATION_MINUTES = 240; // ULTRA OTIMIZADO: 4 horas (dados estáticos)
     private const string CACHE_KEY_ALL = "produtos_all";
 
     public CachedProdutoService(
@@ -34,13 +35,13 @@ public class CachedProdutoService : ICachedProdutoService
         _logger = logger;
     }
 
-    public async Task<Produto?> GetProdutoAdequadoAsync(decimal valor, int prazo, CancellationToken ct = default)
+    public async Task<Produto?> GetProdutoAdequadoAsync(ValorMonetario valor, PrazoMeses prazo, CancellationToken ct = default)
     {
         // Buscar todos os produtos em cache
         var todosProdutos = await GetAllAsync(ct);
         
         // Aplicar filtro usando dados em memória
-        return todosProdutos?.FirstOrDefault(p => p.AtendeRequisitos(valor, prazo));
+        return todosProdutos?.FirstOrDefault(p => p.AtendeRequisitos(valor, prazo.Meses));
     }
 
     public async Task<IEnumerable<Produto>?> GetAllAsync(CancellationToken ct = default)
@@ -48,11 +49,11 @@ public class CachedProdutoService : ICachedProdutoService
         // Tentar buscar do cache primeiro
         if (_cache.TryGetValue(CACHE_KEY_ALL, out List<Produto>? todosProdutos))
         {
-            _logger.LogDebug("Produtos obtidos do cache ({Count} produtos)", todosProdutos?.Count ?? 0);
+            _logger.LogDebug("⚡ Cache hit: {Count} produtos obtidos da memória (ZERO latência)", todosProdutos?.Count ?? 0);
             return todosProdutos;
         }
 
-        _logger.LogDebug("Cache de produtos não encontrado, consultando banco");
+        _logger.LogInformation("🔥 Cache miss: Buscando TODOS os produtos do SQL Server (apenas 4 registros)");
         
         // Buscar do banco
         todosProdutos = (await _produtoRepository.GetAllAsync(ct))?.ToList();
@@ -67,7 +68,8 @@ public class CachedProdutoService : ICachedProdutoService
             };
             
             _cache.Set(CACHE_KEY_ALL, todosProdutos, cacheOptions);
-            _logger.LogDebug("Lista de produtos adicionada ao cache ({Count} produtos)", todosProdutos.Count);
+            _logger.LogInformation("✅ Cache preenchido: {Count} produtos por {Duration} minutos", 
+                todosProdutos.Count, CACHE_DURATION_MINUTES);
         }
 
         return todosProdutos;

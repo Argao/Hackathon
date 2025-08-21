@@ -1,6 +1,7 @@
 using Hackathon.Domain.Entities;
 using Hackathon.Domain.Enums;
 using Hackathon.Domain.Interfaces.Services;
+using Hackathon.Domain.ValueObjects;
 
 namespace Hackathon.Domain.Services;
 
@@ -8,37 +9,38 @@ public class CalculadoraSAC : ICalculadoraAmortizacao
 {
     public SistemaAmortizacao Tipo => SistemaAmortizacao.SAC;
     
-    public ResultadoSimulacao Calcular(decimal valorPrincipal, decimal taxaMensal, int prazo)
+    public ResultadoSimulacao Calcular(ValorMonetario valorPrincipal, TaxaJuros taxaMensal, PrazoMeses prazo)
     {
         var resultado = new ResultadoSimulacao { Tipo = SistemaAmortizacao.SAC };
-        var saldoDevedor = valorPrincipal;
+        var saldoDevedor = valorPrincipal.Valor;
+        
         // amortização constante: divide o saldo inicial pelo número de parcelas
-        var amortizacaoConstante = decimal.Round(
-            valorPrincipal / prazo,
-            2,
-            MidpointRounding.AwayFromZero);
+        var amortizacaoConstante = (valorPrincipal / prazo.Meses).ArredondarFinanceiro();
 
-        decimal valorTotalParcela = 0;
+        var valorTotalParcela = ValorMonetario.Zero;
 
-        for (var parcela = 1; parcela <= prazo; parcela++)
+        for (var numeroParcela = 1; numeroParcela <= prazo.Meses; numeroParcela++)
         {
             // juros do mês
-            var juros = decimal.Round(saldoDevedor * taxaMensal, 2, MidpointRounding.AwayFromZero);
+            var juros = (ValorMonetario.Create(saldoDevedor).Value * taxaMensal.Taxa).ArredondarFinanceiro();
+            
             // valor da prestação varia: amortização constante + juros
-            var valorPrestacao = decimal.Round(amortizacaoConstante + juros, 2, MidpointRounding.AwayFromZero);
+            var valorPrestacao = (amortizacaoConstante + juros).ArredondarFinanceiro();
+            
             // diminui o saldo devedor apenas pela amortização
-            saldoDevedor = decimal.Round(saldoDevedor - amortizacaoConstante, 2, MidpointRounding.AwayFromZero);
+            saldoDevedor = decimal.Round(saldoDevedor - amortizacaoConstante.Valor, 2, MidpointRounding.AwayFromZero);
             
             valorTotalParcela += valorPrestacao;
             
             resultado.Parcelas.Add(new Parcela
             {
-                Numero = parcela,
+                Numero = numeroParcela,
                 ValorPrestacao = valorPrestacao,
                 ValorAmortizacao = amortizacaoConstante,
                 ValorJuros = juros,
             });
         }
+        
         resultado.ValorTotal = valorTotalParcela;
         return resultado;
     }

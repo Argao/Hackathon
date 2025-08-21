@@ -1,4 +1,3 @@
-using System.Data;
 using FluentValidation;
 using Hackathon.Application.Interfaces;
 using Hackathon.Application.Mappings;
@@ -11,8 +10,8 @@ using Hackathon.Domain.Services;
 using Hackathon.Infrastructure.Context;
 using Hackathon.Infrastructure.EventHub;
 using Hackathon.Infrastructure.Repositories;
+using Hackathon.Infrastructure.Services;
 using Mapster;
-using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,29 +22,53 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
-        // SQL Server connection for produtos
+        // SQL Server connection for produtos (Entity Framework) - OTIMIZADO
         var connectionString = configuration.GetConnectionString("ProdutosDb")
                                ?? throw new InvalidOperationException("Connection string 'ProdutosDb' não encontrada.");
 
-        services.AddSingleton<Func<IDbConnection>>(_ =>
+        services.AddDbContext<ProdutoDbContext>(options =>
         {
-            return () => new SqlConnection(connectionString);
+            options.UseSqlServer(connectionString, sqlOptions =>
+            {
+                sqlOptions.CommandTimeout(10); // AGRESSIVO: Timeout muito baixo para dados estáticos
+                sqlOptions.EnableRetryOnFailure(maxRetryCount: 1, maxRetryDelay: TimeSpan.FromSeconds(1), errorNumbersToAdd: null);
+            });
+            
+            // PERFORMANCE: Máxima otimização para dados read-only
+            options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTrackingWithIdentityResolution);
+            options.EnableSensitiveDataLogging(false);
+            options.EnableDetailedErrors(false);
+            
+            options.ConfigureWarnings(warnings => warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.CoreEventId.SensitiveDataLoggingEnabledWarning));
         });
 
-        // SQLite connection for local data
+        // SQLite connection for local data - OTIMIZADO
         var localConnectionString = configuration.GetConnectionString("LocalDb")
                                   ?? throw new InvalidOperationException("Connection string 'LocalDb' não encontrada.");
 
         services.AddDbContext<AppDbContext>(options =>
-            options.UseSqlite(localConnectionString));
+        {
+            options.UseSqlite(localConnectionString, sqliteOptions =>
+            {
+                sqliteOptions.CommandTimeout(30);
+            });
+            
+            // PERFORMANCE CRÍTICA: Configurações para otimizar batch inserts
+            options.UseQueryTrackingBehavior(QueryTrackingBehavior.TrackAll);
+            
+            // PERFORMANCE: Reduzir logging em produção
+            options.EnableSensitiveDataLogging(false);
+            options.EnableDetailedErrors(false);
+            
+            options.ConfigureWarnings(warnings =>
+            {
+                warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.MultipleCollectionIncludeWarning);
+                warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.CoreEventId.SensitiveDataLoggingEnabledWarning);
+            });
+        });
 
         // Repositories 
-        services.AddScoped<IProdutoRepository>(provider =>
-        {
-            var connectionFactory = provider.GetRequiredService<Func<IDbConnection>>();
-            var logger = provider.GetRequiredService<ILogger<SqlServerProdutoRepository>>();
-            return new SqlServerProdutoRepository(connectionFactory, logger);
-        });
+        services.AddScoped<IProdutoRepository, EfProdutoRepository>();
         
         services.AddScoped<ISimulacaoRepository, SimulacaoRepository>();
         services.AddScoped<IMetricaRepository, MetricaRepository>();
@@ -76,6 +99,9 @@ public static class ServiceCollectionExtensions
 
         // FluentValidation
         services.AddValidatorsFromAssemblyContaining<RealizarSimulacaoCommandValidator>();
+
+        // PERFORMANCE: Warm-up service para resolver Cold Start
+        services.AddHostedService<WarmupService>();
 
         return services;
     }

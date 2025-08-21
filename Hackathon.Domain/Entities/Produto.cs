@@ -1,3 +1,5 @@
+using Hackathon.Domain.ValueObjects;
+
 namespace Hackathon.Domain.Entities;
 
 /// <summary>
@@ -8,16 +10,16 @@ public sealed class Produto
 {
     public int Codigo { get; set; }
     public string Descricao { get; set; } = string.Empty;
-    public decimal TaxaMensal { get; set; }
+    public TaxaJuros TaxaMensal { get; set; }
     public short MinMeses { get; set; }
     public short? MaxMeses { get; set; }
-    public decimal MinValor { get; set; }
-    public decimal? MaxValor { get; set; }
+    public ValorMonetario MinValor { get; set; }
+    public ValorMonetario? MaxValor { get; set; }
 
     /// <summary>
     /// Regra de negócio: valida se o produto atende aos critérios de empréstimo
     /// </summary>
-    public bool AtendeRequisitos(decimal valor, int prazo)
+    public bool AtendeRequisitos(ValorMonetario valor, int prazo)
     {
         return valor >= MinValor &&
                (MaxValor == null || valor <= MaxValor) &&
