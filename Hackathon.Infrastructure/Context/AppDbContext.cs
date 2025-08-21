@@ -8,6 +8,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Simulacao> Simulacoes => Set<Simulacao>();
     public DbSet<ResultadoSimulacao> ResultadosSimulacao => Set<ResultadoSimulacao>();
     public DbSet<Parcela> Parcelas => Set<Parcela>();
+    public DbSet<MetricaRequisicao> Metricas => Set<MetricaRequisicao>();
+
+
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -149,6 +152,59 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
                 .WithMany(r => r.Parcelas)
                 .HasForeignKey(e => e.IdResultado)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configuração da tabela METRICA_REQUISICAO (Telemetria)
+        modelBuilder.Entity<MetricaRequisicao>(entity =>
+        {
+            entity.ToTable("METRICA_REQUISICAO");
+            
+            entity.HasKey(e => e.Id);
+            
+            // Índices para performance nas consultas de telemetria
+            entity.HasIndex(e => e.DataHora)
+                .HasDatabaseName("IX_METRICA_DT_HORA");
+            
+            entity.HasIndex(e => new { e.NomeApi, e.DataHora })
+                .HasDatabaseName("IX_METRICA_API_DATA");
+            
+            entity.Property(e => e.Id)
+                .HasColumnName("ID")
+                .IsRequired();
+            
+            entity.Property(e => e.NomeApi)
+                .HasColumnName("NO_API")
+                .HasMaxLength(100)
+                .IsRequired();
+            
+            entity.Property(e => e.Endpoint)
+                .HasColumnName("TX_ENDPOINT")
+                .HasMaxLength(500)
+                .IsRequired();
+            
+            entity.Property(e => e.TempoRespostaMs)
+                .HasColumnName("NU_TEMPO_RESPOSTA_MS")
+                .IsRequired();
+            
+            entity.Property(e => e.Sucesso)
+                .HasColumnName("FL_SUCESSO")
+                .IsRequired();
+            
+            entity.Property(e => e.StatusCode)
+                .HasColumnName("NU_STATUS_CODE")
+                .IsRequired();
+            
+            entity.Property(e => e.DataHora)
+                .HasColumnName("DT_HORA")
+                .IsRequired();
+            
+            entity.Property(e => e.IpCliente)
+                .HasColumnName("TX_IP_CLIENTE")
+                .HasMaxLength(45); // IPv6 pode ter até 45 caracteres
+            
+            entity.Property(e => e.UserAgent)
+                .HasColumnName("TX_USER_AGENT")
+                .HasMaxLength(1000);
         });
 
         base.OnModelCreating(modelBuilder);

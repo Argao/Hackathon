@@ -48,6 +48,7 @@ public static class ServiceCollectionExtensions
         });
         
         services.AddScoped<ISimulacaoRepository, SimulacaoRepository>();
+        services.AddScoped<IMetricaRepository, MetricaRepository>();
 
         // Domain Services (Calculators)
         services.AddScoped<ICalculadoraAmortizacao, CalculadoraSAC>();
@@ -56,6 +57,9 @@ public static class ServiceCollectionExtensions
         // Application Services
         services.AddScoped<ISimulacaoService, SimulacaoService>();
         services.AddScoped<ICachedProdutoService, CachedProdutoService>();
+        
+        // Telemetria Services
+        services.AddScoped<ITelemetriaService, TelemetriaService>();
 
         // EventHub Service - Singleton para reutilizar connection pool
         services.AddSingleton<IEventHubService, EventHubService>();

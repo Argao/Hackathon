@@ -1,5 +1,6 @@
 using System.Data;
 using Hackathon.API.Mappings;
+using Hackathon.API.Middleware;
 using Hackathon.Infrastructure.DependencyInjection;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
@@ -12,6 +13,9 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// Configurar Health Checks
+builder.Services.AddHealthChecks();
 
 // Configuração da infraestrutura isolada
 builder.Services.AddInfrastructure(builder.Configuration);
@@ -30,8 +34,14 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+// 🔥 Middleware de telemetria ANTES do roteamento para capturar todas as requisições
+app.UseMiddleware<TelemetriaMiddleware>();
+
 app.UseAuthorization();
 
 app.MapControllers();
+
+// Configurar endpoint de health check
+app.MapHealthChecks("/health");
 
 await app.RunAsync();

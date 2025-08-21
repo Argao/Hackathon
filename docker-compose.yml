@@ -1,0 +1,88 @@
+# ===========================
+# Docker Compose - Hackathon
+# ===========================
+
+version: '3.8'
+
+services:
+  # ===========================
+  # Aplicação Principal
+  # ===========================
+  hackathon-api:
+    container_name: hackathon-api
+    image: hackathon-api:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - BUILDKIT_INLINE_CACHE=1
+    ports:
+      - "8080:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__LocalDb=/app/data/hack.db
+    volumes:
+      - hackathon-data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    networks:
+      - hackathon-network
+    depends_on:
+      hackathon-db:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+
+  # ===========================
+  # Banco de Dados Local (SQLite via volume)
+  # ===========================
+  hackathon-db:
+    container_name: hackathon-db-init
+    image: alpine:3.19
+    command: |
+      sh -c "
+        mkdir -p /data &&
+        touch /data/hack.db &&
+        chmod 666 /data/hack.db &&
+        echo 'Banco SQLite inicializado' &&
+        tail -f /dev/null
+      "
+    volumes:
+      - hackathon-data:/data
+    healthcheck:
+      test: ["CMD", "test", "-f", "/data/hack.db"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - hackathon-network
+
+# ===========================
+# Volumes Persistentes
+# ===========================
+volumes:
+  hackathon-data:
+    driver: local
+    name: hackathon-data
+
+# ===========================
+# Rede Isolada
+# ===========================
+networks:
+  hackathon-network:
+    driver: bridge
+    name: hackathon-network

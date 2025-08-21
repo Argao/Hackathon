@@ -1,25 +1,88 @@
-﻿**/.dockerignore
-**/.env
-**/.git
-**/.gitignore
-**/.project
-**/.settings
-**/.toolstarget
-**/.vs
-**/.vscode
-**/.idea
-**/*.*proj.user
-**/*.dbmdl
-**/*.jfm
-**/azds.yaml
-**/bin
-**/charts
-**/docker-compose*
-**/Dockerfile*
-**/node_modules
-**/npm-debug.log
-**/obj
-**/secrets.dev.yaml
-**/values.dev.yaml
-LICENSE
-README.md
+﻿# ===========================
+# .dockerignore para Hackathon
+# ===========================
+
+# Arquivos do Git
+.git
+.gitignore
+.gitattributes
+
+# Documentação
+*.md
+hackathon.pdf
+
+# Arquivos de build e output
+**/bin/
+**/obj/
+**/out/
+**/publish/
+**/Release/
+**/Debug/
+**/x64/
+**/x86/
+**/artifacts/
+
+# NuGet
+**/packages/
+*.nupkg
+nuget.exe
+
+# Visual Studio / Rider
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.userprefs
+**/launchSettings.json
+
+# Logs
+**/logs/
+*.log
+*.log.*
+
+# Dados locais
+**/data/
+*.db
+*.db-*
+
+# Cache e temp
+**/wwwroot/lib/
+**/.sass-cache/
+**/node_modules/
+**/.npm/
+**/.nuget/
+**/tmp/
+**/.tmp/
+
+# Ferramentas de desenvolvimento  
+**/.dotnet/
+**/.local/
+**/.config/
+
+# Docker
+Dockerfile*
+.dockerignore
+compose*.yml
+compose*.yaml
+
+# Arquivos de sistema
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Arquivos de configuração sensíveis
+*.pfx
+*.p12
+*.key
+**/secrets/
+
+# Testes
+**/TestResults/
+**/coverage/
+*.trx
+*.coverage
+*.coveragexml

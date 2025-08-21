@@ -5,6 +5,12 @@
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+        <!-- 🚀 Native AOT Configuration - DESABILITADO (MVC não suporta AOT ainda) -->
+        <PublishAot>false</PublishAot>
+        <!-- <RuntimeIdentifier>linux-x64</RuntimeIdentifier> -->
+        <!-- <InvariantGlobalization>true</InvariantGlobalization> -->
+        <!-- <OptimizationPreference>Speed</OptimizationPreference> -->
+        <!-- <TrimmerDefaultAction>link</TrimmerDefaultAction> -->
     </PropertyGroup>
 
     <ItemGroup>
@@ -15,6 +21,7 @@
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2"/>
+        <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="8.0.10" />
     </ItemGroup>
 
     <ItemGroup>
