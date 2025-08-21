@@ -198,13 +198,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
                 .HasColumnName("DT_HORA")
                 .IsRequired();
             
-            entity.Property(e => e.IpCliente)
-                .HasColumnName("TX_IP_CLIENTE")
-                .HasMaxLength(45); // IPv6 pode ter até 45 caracteres
-            
-            entity.Property(e => e.UserAgent)
-                .HasColumnName("TX_USER_AGENT")
-                .HasMaxLength(1000);
         });
 
         base.OnModelCreating(modelBuilder);

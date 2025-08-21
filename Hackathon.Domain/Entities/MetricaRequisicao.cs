@@ -37,13 +37,4 @@ public class MetricaRequisicao
     /// </summary>
     public DateTime DataHora { get; set; }
     
-    /// <summary>
-    /// IP do cliente (opcional, para análises futuras)
-    /// </summary>
-    public string? IpCliente { get; set; }
-    
-    /// <summary>
-    /// User-Agent do cliente (opcional, para análises futuras)
-    /// </summary>
-    public string? UserAgent { get; set; }
 }

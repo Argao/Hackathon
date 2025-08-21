@@ -62,8 +62,6 @@ public class TelemetriaService : ITelemetriaService
                     Sucesso = sucesso,
                     StatusCode = statusCode,
                     DataHora = DateTime.UtcNow, // Usar UTC para evitar problemas de timezone
-                    IpCliente = ipCliente?.Trim(),
-                    UserAgent = userAgent?.Trim()
                 };
 
                 // Repository já trata erros internamente (não propaga exceções)
