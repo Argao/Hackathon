@@ -8,6 +8,7 @@ using Hackathon.Domain.Interfaces.Repositories;
 using Hackathon.Domain.Interfaces.Services;
 using Hackathon.Domain.ValueObjects;
 using Mapster;
+using Microsoft.Extensions.Logging;
 
 namespace Hackathon.Application.Services;
 
@@ -23,6 +24,7 @@ public class SimulacaoService : ISimulacaoService
     private readonly IValidator<ListarSimulacoesQuery> _listarValidator;
     private readonly IValidator<ObterVolumeSimuladoQuery> _volumeValidator;
     private readonly IEventHubService _eventHubService;
+    private readonly ILogger<SimulacaoService> _logger;
 
     public SimulacaoService(
         ICachedProdutoService cachedProdutoService,
@@ -31,7 +33,8 @@ public class SimulacaoService : ISimulacaoService
         IValidator<RealizarSimulacaoCommand> simulacaoValidator,
         IValidator<ListarSimulacoesQuery> listarValidator,
         IValidator<ObterVolumeSimuladoQuery> volumeValidator,
-        IEventHubService eventHubService)
+        IEventHubService eventHubService,
+        ILogger<SimulacaoService> logger)
     {
         _cachedProdutoService = cachedProdutoService;
         _simulacaoRepository = simulacaoRepository;
@@ -40,6 +43,7 @@ public class SimulacaoService : ISimulacaoService
         _listarValidator = listarValidator;
         _volumeValidator = volumeValidator;
         _eventHubService = eventHubService;
+        _logger = logger;
     }
 
     /// <summary>
@@ -92,22 +96,73 @@ public class SimulacaoService : ISimulacaoService
             )).ToList()
         );
 
+        // Log informativo sobre o início do processamento
+        _logger.LogInformation("💾 Iniciando persistência da simulação ID: {SimulacaoId}", result.Id);
+        _logger.LogInformation("📡 Iniciando envio da simulação para EventHub - ID: {SimulacaoId}", result.Id);
+
         // Executar persistência e envio ao EventHub em paralelo para máxima performance
         var persistirTask = _simulacaoRepository.AdicionarAsync(simulacao, ct);
         var eventhubTask = _eventHubService.EnviarSimulacaoAsync(result, ct);
+
+        bool eventhubSucesso = false;
+        bool persistenciaSucesso = false;
+        Exception? eventhubException = null;
+        Exception? persistenciaException = null;
 
         try
         {
             // Aguarda ambas as operações em paralelo
             await Task.WhenAll(persistirTask, eventhubTask);
+            persistenciaSucesso = true;
+            eventhubSucesso = true;
+            
+            _logger.LogInformation("✅ Simulação processada com SUCESSO COMPLETO - ID: {SimulacaoId} (Persistência ✅ + EventHub ✅)", result.Id);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            // Se o EventHub falhar, mas a persistência for bem-sucedida, 
-            // ainda retornamos sucesso pois o requisito principal foi atendido
-            // O log de erro já foi registrado no EventHubService
-            await persistirTask; // Garante que a persistência foi concluída
+            // Verificar qual operação falhou
+            if (persistirTask.IsFaulted)
+            {
+                persistenciaException = persistirTask.Exception?.GetBaseException();
+                _logger.LogError(persistenciaException, "❌ ERRO na persistência da simulação ID: {SimulacaoId}", result.Id);
+            }
+            else
+            {
+                persistenciaSucesso = true;
+                _logger.LogInformation("✅ Persistência concluída com sucesso - ID: {SimulacaoId}", result.Id);
+            }
+
+            if (eventhubTask.IsFaulted)
+            {
+                eventhubException = eventhubTask.Exception?.GetBaseException();
+                _logger.LogError(eventhubException, "❌ ERRO no envio ao EventHub da simulação ID: {SimulacaoId}", result.Id);
+            }
+            else
+            {
+                eventhubSucesso = true;
+                _logger.LogInformation("✅ EventHub concluído com sucesso - ID: {SimulacaoId}", result.Id);
+            }
+
+            // Se a persistência falhou, é erro crítico
+            if (persistenciaException != null)
+            {
+                _logger.LogError("🚨 FALHA CRÍTICA: Simulação não foi persistida - ID: {SimulacaoId}", result.Id);
+                throw persistenciaException;
+            }
+
+            // Se apenas o EventHub falhou, logamos mas continuamos
+            if (eventhubException != null)
+            {
+                _logger.LogWarning("⚠️  EventHub falhou, mas simulação foi persistida com sucesso - ID: {SimulacaoId}. Requisito principal atendido.", result.Id);
+            }
         }
+
+        // Log final com resumo do status
+        var statusEventHub = eventhubSucesso ? "✅ SUCESSO" : "❌ FALHA";
+        var statusPersistencia = persistenciaSucesso ? "✅ SUCESSO" : "❌ FALHA";
+        
+        _logger.LogInformation("📊 RESUMO - Simulação ID: {SimulacaoId} | Persistência: {StatusPersistencia} | EventHub: {StatusEventHub}", 
+            result.Id, statusPersistencia, statusEventHub);
 
         return Result<SimulacaoResult>.Success(result);
     }
