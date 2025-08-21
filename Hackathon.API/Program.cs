@@ -1,4 +1,5 @@
 using System.Data;
+using Hackathon.API.Mappings;
 using Hackathon.Infrastructure.DependencyInjection;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
@@ -15,6 +16,9 @@ builder.Services.AddSwaggerGen();
 // Configuração da infraestrutura isolada
 builder.Services.AddInfrastructure(builder.Configuration);
 
+// Configure API Mappings
+ApiMappingProfile.Configure();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -30,4 +34,4 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-app.Run();
+await app.RunAsync();

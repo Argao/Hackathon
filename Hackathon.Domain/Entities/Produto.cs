@@ -1,23 +1,27 @@
 namespace Hackathon.Domain.Entities;
 
+/// <summary>
+/// Entidade read-only que representa um produto financeiro do banco externo.
+/// Simples e pragmática - dados já validados na origem.
+/// </summary>
 public sealed class Produto
 {
-    public int Codigo { get; private set; }
-    public string Descricao { get; private set; }
-    public decimal TaxaMensal { get; private set; }
-    public short MinMeses { get; private set; }
-    public short? MaxMeses { get; private set; }
-    public decimal MinValor { get; private set; }
-    public decimal? MaxValor { get; private set; }
+    public int Codigo { get; set; }
+    public string Descricao { get; set; } = string.Empty;
+    public decimal TaxaMensal { get; set; }
+    public short MinMeses { get; set; }
+    public short? MaxMeses { get; set; }
+    public decimal MinValor { get; set; }
+    public decimal? MaxValor { get; set; }
 
-    public Produto(int codigo, string descricao, decimal taxaMensal, short minMeses, short? maxMeses, decimal minValor, decimal? maxValor)
+    /// <summary>
+    /// Regra de negócio: valida se o produto atende aos critérios de empréstimo
+    /// </summary>
+    public bool AtendeRequisitos(decimal valor, int prazo)
     {
-        Codigo = codigo;
-        Descricao = descricao;
-        TaxaMensal = taxaMensal;
-        MinMeses = minMeses;
-        MaxMeses = maxMeses;
-        MinValor = minValor;
-        MaxValor = maxValor;
+        return valor >= MinValor &&
+               (MaxValor == null || valor <= MaxValor) &&
+               prazo >= MinMeses &&
+               (MaxMeses == null || prazo <= MaxMeses);
     }
 }

@@ -10,4 +10,12 @@
       <ProjectReference Include="..\Hackathon.Domain\Hackathon.Domain.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="FluentValidation" Version="12.0.0" />
+      <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.0.0" />
+      <PackageReference Include="Mapster" Version="7.4.0" />
+      <PackageReference Include="Mapster.DependencyInjection" Version="1.0.1" />
+      <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.8" />
+    </ItemGroup>
+
 </Project>

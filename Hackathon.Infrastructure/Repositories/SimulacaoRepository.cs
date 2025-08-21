@@ -66,4 +66,21 @@ public class SimulacaoRepository(AppDbContext context) : ISimulacaoRepository
 
         return resultado;
     }
+
+    public async Task<int> ObterTotalSimulacoesAsync(CancellationToken ct)
+    {
+        return await context.Simulacoes.CountAsync(ct);
+    }
+
+    public async Task<IEnumerable<Simulacao>> ListarSimulacoesAsync(int pageNumber, int pageSize, CancellationToken ct)
+    {
+        return await context.Simulacoes
+            .Include(s => s.Resultados)
+                .ThenInclude(r => r.Parcelas)
+            .OrderByDescending(s => s.DataReferencia)
+                .ThenByDescending(s => s.IdSimulacao)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(ct);
+    }
 }

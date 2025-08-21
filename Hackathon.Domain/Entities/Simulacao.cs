@@ -11,7 +11,7 @@ public sealed class Simulacao
     public decimal ValorDesejado { get; set; }
     public short PrazoMeses { get; set; }
     public DateOnly DataReferencia { get; set; }
-
     public string EnvelopJson { get; set; } = string.Empty;
+    
     public ICollection<ResultadoSimulacao> Resultados { get; set; } = new List<ResultadoSimulacao>();
 }

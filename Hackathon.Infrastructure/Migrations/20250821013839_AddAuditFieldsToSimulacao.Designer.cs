@@ -3,6 +3,7 @@ using System;
 using Hackathon.Infrastructure.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Hackathon.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250821013839_AddAuditFieldsToSimulacao")]
+    partial class AddAuditFieldsToSimulacao
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.10");
@@ -85,6 +88,10 @@ namespace Hackathon.Infrastructure.Migrations
                         .HasColumnType("INTEGER")
                         .HasColumnName("CO_PRODUTO");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("DT_CREATED_AT");
+
                     b.Property<DateOnly>("DataReferencia")
                         .HasColumnType("TEXT")
                         .HasColumnName("DT_REFERENCIA");
@@ -104,9 +111,19 @@ namespace Hackathon.Infrastructure.Migrations
                         .HasColumnType("INTEGER")
                         .HasColumnName("NU_PRAZO_MESES");
 
+                    b.Property<string>("SourceIp")
+                        .HasMaxLength(45)
+                        .HasColumnType("TEXT")
+                        .HasColumnName("TX_SOURCE_IP");
+
                     b.Property<decimal>("TaxaJuros")
                         .HasColumnType("decimal(10,9)")
                         .HasColumnName("PC_TAXA_JUROS");
+
+                    b.Property<string>("UserAgent")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT")
+                        .HasColumnName("TX_USER_AGENT");
 
                     b.Property<decimal>("ValorDesejado")
                         .HasColumnType("decimal(18,2)")
@@ -117,8 +134,17 @@ namespace Hackathon.Infrastructure.Migrations
                     b.HasIndex("CodigoProduto")
                         .HasDatabaseName("IX_SIMULACAO_CO_PRODUTO");
 
+                    b.HasIndex("CreatedAt")
+                        .HasDatabaseName("IX_SIMULACAO_CREATED_AT");
+
                     b.HasIndex("DataReferencia")
                         .HasDatabaseName("IX_SIMULACAO_DT_REFERENCIA");
+
+                    b.HasIndex("CreatedAt", "DataReferencia")
+                        .HasDatabaseName("IX_SIMULACAO_AUDITORIA_TEMPORAL");
+
+                    b.HasIndex("DataReferencia", "CodigoProduto", "TaxaJuros")
+                        .HasDatabaseName("IX_SIMULACAO_RELATORIO_VOLUME");
 
                     b.ToTable("SIMULACAO", (string)null);
                 });

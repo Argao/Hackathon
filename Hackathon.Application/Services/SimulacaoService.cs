@@ -1,127 +1,153 @@
-using Hackathon.Application.DTOs.Requests;
-using Hackathon.Application.DTOs.Responses;
+using FluentValidation;
+using Hackathon.Application.Commands;
 using Hackathon.Application.Interfaces;
+using Hackathon.Application.Queries;
+using Hackathon.Application.Results;
 using Hackathon.Domain.Entities;
 using Hackathon.Domain.Interfaces.Repositories;
 using Hackathon.Domain.Interfaces.Services;
+using Hackathon.Domain.ValueObjects;
+using Mapster;
 
 namespace Hackathon.Application.Services;
 
+/// <summary>
+/// Serviço de aplicação para operações de simulação
+/// </summary>
 public class SimulacaoService : ISimulacaoService
 {
     private readonly ISimulacaoRepository _simulacaoRepository;
-    private readonly IProdutoRepository _produtoRepository;
+    private readonly ICachedProdutoService _cachedProdutoService;
     private readonly IEnumerable<ICalculadoraAmortizacao> _calculadoras;
+    private readonly IValidator<RealizarSimulacaoCommand> _simulacaoValidator;
+    private readonly IValidator<ListarSimulacoesQuery> _listarValidator;
+    private readonly IValidator<ObterVolumeSimuladoQuery> _volumeValidator;
 
     public SimulacaoService(
-        IProdutoRepository produtoRepository, 
+        ICachedProdutoService cachedProdutoService,
         ISimulacaoRepository simulacaoRepository, 
-        IEnumerable<ICalculadoraAmortizacao> calculadoras)
+        IEnumerable<ICalculadoraAmortizacao> calculadoras,
+        IValidator<RealizarSimulacaoCommand> simulacaoValidator,
+        IValidator<ListarSimulacoesQuery> listarValidator,
+        IValidator<ObterVolumeSimuladoQuery> volumeValidator)
     {
-        _produtoRepository = produtoRepository;
+        _cachedProdutoService = cachedProdutoService;
         _simulacaoRepository = simulacaoRepository;
         _calculadoras = calculadoras;
+        _simulacaoValidator = simulacaoValidator;
+        _listarValidator = listarValidator;
+        _volumeValidator = volumeValidator;
     }
 
-    public async Task<SimulacaoResponseDTO?> RealizarSimulacaoAsync(SimulacaoRequestDTO request, CancellationToken ct)
+    /// <summary>
+    /// Executa uma simulação de crédito
+    /// </summary>
+    public async Task<Result<SimulacaoResult>> RealizarSimulacaoAsync(RealizarSimulacaoCommand command, CancellationToken ct)
     {
-        var produto = await _produtoRepository.GetProdutoAdequadoAsync(request.Valor, request.Prazo, ct);
-        if (produto is null) return null;
+        // Validação do comando
+        var validationResult = await _simulacaoValidator.ValidateAsync(command, ct);
+        if (!validationResult.IsValid)
+            return Result<SimulacaoResult>.Failure(string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage)));
+
+        // Validação com Value Objects
+        var valueObjectsResult = command.ToValueObjects();
+        if (!valueObjectsResult.IsSuccess)
+            return Result<SimulacaoResult>.Failure(valueObjectsResult.Error);
+
+        var (valorEmprestimo, prazoMeses) = valueObjectsResult.Value;
+
+        // Buscar produto adequado usando cache
+        var produto = await _cachedProdutoService.GetProdutoAdequadoAsync(valorEmprestimo, prazoMeses, ct);
+        if (produto is null)
+            return Result<SimulacaoResult>.Failure(
+                $"Nenhum produto disponível para valor {valorEmprestimo} e prazo {prazoMeses}");
+
+        // Criar simulação simples
+        var simulacao = (command, produto).Adapt<Simulacao>();
+
+        // Calcular amortizações
+        var resultados = _calculadoras
+            .Select(c => c.Calcular(valorEmprestimo, produto.TaxaMensal, prazoMeses))
+            .ToList();
         
-        var simulacao = CriarSimulacao(request, produto);
-        
-        var resultados = _calculadoras.Select(c => c.Calcular(request.Valor, produto.TaxaMensal, request.Prazo));
-        simulacao.Resultados = resultados.ToList();
-        
+        simulacao.Resultados = resultados;
+
+        // Mapear resultado direto dos cálculos antes de persistir
+        var result = new SimulacaoResult(
+            Id: simulacao.IdSimulacao,
+            CodigoProduto: simulacao.CodigoProduto,
+            DescricaoProduto: simulacao.DescricaoProduto,
+            TaxaJuros: simulacao.TaxaJuros,
+            Resultados: resultados.Select(r => new ResultadoCalculoAmortizacao(
+                TipoAmortizacao: r.Tipo.ToString(),
+                Parcelas: r.Parcelas.Select(p => new ParcelaCalculada(
+                    Numero: p.Numero,
+                    ValorAmortizacao: p.ValorAmortizacao,
+                    ValorJuros: p.ValorJuros,
+                    ValorPrestacao: p.ValorPrestacao
+                )).ToList()
+            )).ToList()
+        );
+
+        // Persistir simulação
         await _simulacaoRepository.AdicionarAsync(simulacao, ct);
-
-        return CriarResponseDto(simulacao);
+        return Result<SimulacaoResult>.Success(result);
     }
-    
-    public async Task<VolumeSimuladoResponseDTO> ObterVolumeSimuladoPorDiaAsync(DateOnly dataReferencia, CancellationToken ct)
+
+    /// <summary>
+    /// Lista simulações de forma paginada
+    /// </summary>
+    public async Task<Result<PagedResult<SimulacaoResumoResult>>> ListarSimulacoesAsync(ListarSimulacoesQuery query, CancellationToken ct)
     {
-        var dadosAgregados = await _simulacaoRepository.ObterVolumeSimuladoPorProdutoAsync(dataReferencia, ct);
+        // Validação da query
+        var validationResult = await _listarValidator.ValidateAsync(query, ct);
+        if (!validationResult.IsValid)
+            return Result<PagedResult<SimulacaoResumoResult>>.Failure(
+                string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage)));
+
+        var pageNumber = query.GetValidPageNumber();
+        var pageSize = query.GetValidPageSize();
+
+        var totalItems = await _simulacaoRepository.ObterTotalSimulacoesAsync(ct);
+        var simulacoes = await _simulacaoRepository.ListarSimulacoesAsync(pageNumber, pageSize, ct);
+
+        var resumos = simulacoes.Select(s => new SimulacaoResumoResult(
+            Id: s.IdSimulacao,
+            ValorDesejado: s.ValorDesejado,
+            Prazo: s.PrazoMeses,
+            ValorTotalParcelas: s.Resultados.SelectMany(r => r.Parcelas).Sum(p => p.ValorPrestacao)
+        )).ToList();
+
+        var result = new PagedResult<SimulacaoResumoResult>(
+            Items: resumos,
+            TotalItems: totalItems,
+            CurrentPage: pageNumber,
+            PageSize: pageSize
+        );
+
+        return Result<PagedResult<SimulacaoResumoResult>>.Success(result);
+    }
+
+    /// <summary>
+    /// Obtém volume simulado por data
+    /// </summary>
+    public async Task<Result<VolumeSimuladoResult>> ObterVolumeSimuladoAsync(ObterVolumeSimuladoQuery query, CancellationToken ct)
+    {
+        // Validação da query
+        var validationResult = await _volumeValidator.ValidateAsync(query, ct);
+        if (!validationResult.IsValid)
+            return Result<VolumeSimuladoResult>.Failure(
+                string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage)));
+
+        var dadosAgregados = await _simulacaoRepository.ObterVolumeSimuladoPorProdutoAsync(query.DataReferencia, ct);
         
-        var simulacoesDto = dadosAgregados.Select(d => new VolumeSimuladoProdutoDTO
-        {
-            CodigoProduto = d.CodigoProduto,
-            DescricaoProduto = d.DescricaoProduto,
-            TaxaMediaJuro = d.TaxaMediaJuro,
-            ValorMedioPrestacao = d.ValorMedioPrestacao,
-            ValorTotalDesejado = d.ValorTotalDesejado,
-            ValorTotalCredito = d.ValorTotalCredito
-        }).ToList();
+        var produtos = dadosAgregados.Adapt<List<VolumeSimuladoProdutoResult>>();
+        
+        var result = new VolumeSimuladoResult(
+            DataReferencia: query.DataReferencia,
+            Produtos: produtos
+        );
 
-        return new VolumeSimuladoResponseDTO
-        {
-            DataReferencia = dataReferencia.ToString("yyyy-MM-dd"),
-            Simulacoes = simulacoesDto
-        };
-    }
-
-    public async Task<PagedResponse<ListarSimulacoesDTO>> ListarPaginadoAsync(PagedRequest request, CancellationToken ct)
-    {
-        var (data, totalRecords) = await _simulacaoRepository.ListarPaginadoAsync(
-            request.GetValidPageNumber(), 
-            request.GetValidPageSize(), 
-            ct);
-    
-        var dtos = data.Select(s => new ListarSimulacoesDTO
-        {
-            Id = s.IdSimulacao,
-            ValorDesejado = s.ValorDesejado,
-            PrazoMeses = s.PrazoMeses,
-            ResultadoSimulacao = s.Resultados?.Select(r => new ValorTotalParcelasDTO
-            {
-                Tipo = r.Tipo,
-                ValorTotal = r.ValorTotal
-            }).ToList() ?? new List<ValorTotalParcelasDTO>()
-        }).ToList();
-
-        var totalPages = (int)Math.Ceiling((double)totalRecords / request.GetValidPageSize());
-
-        return new PagedResponse<ListarSimulacoesDTO>
-        {
-            Data = dtos,
-            TotalRecords = totalRecords,
-            PageNumber = request.GetValidPageNumber(),
-            PageSize = request.GetValidPageSize(),
-            TotalPages = totalPages
-        };
-    }
-    
-    private static Simulacao CriarSimulacao(SimulacaoRequestDTO request, Produto produto)
-    {
-        return new Simulacao
-        {
-            CodigoProduto = produto.Codigo,
-            DescricaoProduto = produto.Descricao,
-            TaxaJuros = produto.TaxaMensal,
-            PrazoMeses = (short)request.Prazo,
-            ValorDesejado = request.Valor,
-            DataReferencia = DateOnly.FromDateTime(DateTime.Today)
-        };
-    }
-    
-    private static SimulacaoResponseDTO CriarResponseDto(Simulacao simulacao)
-    {
-        return new SimulacaoResponseDTO
-        {
-            Id = simulacao.IdSimulacao,
-            CodigoProduto = simulacao.CodigoProduto,
-            DescricaoProduto = simulacao.DescricaoProduto,
-            TaxaJuros = simulacao.TaxaJuros,
-            ResultadoSimulacao = simulacao.Resultados.Select(r => new ResultadoSimulacaoDTO
-            {
-                Tipo = r.Tipo,
-                Parcelas = r.Parcelas.Select(p => new ParcelaDTO
-                {
-                    Numero = p.Numero,
-                    ValorAmortizacao = p.ValorAmortizacao,
-                    ValorJuros = p.ValorJuros,
-                    ValorPrestacao = p.ValorPrestacao
-                }).ToList()
-            }).ToList()
-        };
+        return Result<VolumeSimuladoResult>.Success(result);
     }
 }

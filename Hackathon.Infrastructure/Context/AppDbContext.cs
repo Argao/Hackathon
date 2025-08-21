@@ -18,7 +18,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             
             entity.HasKey(e => e.IdSimulacao);
             
-            // Índices para performance
+            // Índices básicos
             entity.HasIndex(e => e.CodigoProduto)
                 .HasDatabaseName("IX_SIMULACAO_CO_PRODUTO");
             
