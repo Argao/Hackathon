@@ -38,24 +38,31 @@ public class SimulacaoRepository(AppDbContext context) : ISimulacaoRepository
 
     public async Task<IEnumerable<VolumeSimuladoAgregado>> ObterVolumeSimuladoPorProdutoAsync(DateOnly dataReferencia, CancellationToken ct)
     {
-        var resultado = await context.Simulacoes
+        // Primeiro, buscar as simulações do banco
+        var simulacoes = await context.Simulacoes
             .Include(s => s.Resultados)
             .ThenInclude(r => r.Parcelas)
             .Where(s => s.DataReferencia == dataReferencia)
+            .ToListAsync(ct);
+
+        // Fazer as operações de agregação no cliente (C#)
+        var resultado = simulacoes
             .GroupBy(s => new { s.CodigoProduto, s.DescricaoProduto })
             .Select(g => new VolumeSimuladoAgregado
             {
                 CodigoProduto = g.Key.CodigoProduto,
                 DescricaoProduto = g.Key.DescricaoProduto,
-                TaxaMediaJuro = g.Average(s => s.TaxaJuros),
+                TaxaMediaJuro = (decimal)g.Average(s => (double)s.TaxaJuros),
                 ValorMedioPrestacao = g.SelectMany(s => s.Resultados)
                     .SelectMany(r => r.Parcelas)
-                    .Average(p => p.ValorPrestacao),
+                    .Any() ? (decimal)g.SelectMany(s => s.Resultados)
+                            .SelectMany(r => r.Parcelas)
+                            .Average(p => (double)p.ValorPrestacao) : 0,
                 ValorTotalDesejado = g.Sum(s => s.ValorDesejado),
                 ValorTotalCredito = g.SelectMany(s => s.Resultados)
                     .Sum(r => r.ValorTotal)
             })
-            .ToListAsync(ct);
+            .ToList();
 
         return resultado;
     }

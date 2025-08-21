@@ -1,7 +1,7 @@
 using System.Data;
 using Dapper;
 using Hackathon.Domain.Entities;
-using Hackathon.Domain.Interfaces;
+using Hackathon.Domain.Interfaces.Repositories;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 

@@ -8,20 +8,17 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Hackathon.Domain\Hackathon.Domain.csproj" />
+      <ProjectReference Include="..\Hackathon.Application\Hackathon.Application.csproj" />
     </ItemGroup>
 
     <ItemGroup>
       <PackageReference Include="Dapper" Version="2.1.66" />
       <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.1" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Reference Include="Hackathon.API">
-        <HintPath>..\Hackathon.API\bin\Debug\net8.0\Hackathon.API.dll</HintPath>
-      </Reference>
-      <Reference Include="Microsoft.Extensions.Configuration.Abstractions">
-        <HintPath>..\..\..\.nuget\packages\microsoft.extensions.configuration.abstractions\9.0.8\lib\net8.0\Microsoft.Extensions.Configuration.Abstractions.dll</HintPath>
-      </Reference>
+      <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="8.0.2" />
+      <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.2" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.10" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.10" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.10" />
     </ItemGroup>
 
 </Project>
