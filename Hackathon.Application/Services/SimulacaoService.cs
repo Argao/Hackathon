@@ -52,30 +52,25 @@ public class SimulacaoService : ISimulacaoService
     /// </summary>
     public async Task<SimulacaoResult> RealizarSimulacaoAsync(RealizarSimulacaoCommand command, CancellationToken ct)
     {
-        // Validação do comando
         var validationResult = await _simulacaoValidator.ValidateAsync(command, ct);
         if (!validationResult.IsValid)
             throw new Hackathon.Domain.Exceptions.ValidationException(
                 validationResult.Errors.Select(e => e.ErrorMessage));
 
-        // Validação com Value Objects
         var valueObjectsResult = command.ToValueObjects();
         if (!valueObjectsResult.IsSuccess)
             throw new Hackathon.Domain.Exceptions.ValidationException(valueObjectsResult.Error);
 
         var (valorEmprestimo, prazoMeses) = valueObjectsResult.Value;
 
-        // Buscar produto adequado usando cache - converter ValorEmprestimo para ValorMonetario
         var valorMonetario = ValorMonetario.Create(valorEmprestimo.Valor).Value;
         var produto = await _cachedProdutoService.GetProdutoAdequadoAsync(valorMonetario, prazoMeses, ct);
         if (produto is null)
             throw new SimulacaoException(
                 $"Nenhum produto disponível para valor {valorEmprestimo} e prazo {prazoMeses}");
 
-        // Criar simulação simples
         var simulacao = (command, produto).Adapt<Simulacao>();
 
-        // Calcular amortizações - reutilizar valorMonetario já criado
         var resultados = _calculadoras
             .Select(c => c.Calcular(valorMonetario, produto.TaxaMensal, prazoMeses))
             .ToList();
@@ -177,7 +172,6 @@ public class SimulacaoService : ISimulacaoService
     public async Task<VolumeSimuladoResult> ObterVolumeSimuladoAsync(ObterVolumeSimuladoQuery query,
         CancellationToken ct)
     {
-        // Validação da query
         var validationResult = await _volumeValidator.ValidateAsync(query, ct);
         if (!validationResult.IsValid)
             throw new Hackathon.Domain.Exceptions.ValidationException(

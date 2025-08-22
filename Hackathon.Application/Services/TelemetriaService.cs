@@ -36,7 +36,6 @@ public class TelemetriaService : ITelemetriaService
         int statusCode, 
         CancellationToken cancellationToken = default)
     {
-        // Validação rápida dos parâmetros obrigatórios
         if (string.IsNullOrWhiteSpace(nomeApi) || string.IsNullOrWhiteSpace(endpoint))
         {
             _logger.LogWarning("Tentativa de registrar métrica com parâmetros inválidos: " +
@@ -44,12 +43,12 @@ public class TelemetriaService : ITelemetriaService
             return;
         }
 
-        // 🔥 FIRE-AND-FORGET: Executar em background thread com scope próprio
+        // Fire-and-forget: executa em background thread com scope próprio
         _ = Task.Run(async () =>
         {
             try
             {
-                // Criar um novo scope independente para evitar ObjectDisposedException
+                // Criar scope independente para evitar ObjectDisposedException
                 using var scope = _scopeFactory.CreateScope();
                 var metricaRepository = scope.ServiceProvider.GetRequiredService<IMetricaRepository>();
 
@@ -60,20 +59,17 @@ public class TelemetriaService : ITelemetriaService
                     TempoRespostaMs = tempoResposta,
                     Sucesso = sucesso,
                     StatusCode = statusCode,
-                    DataHora = DateTime.UtcNow, // Usar UTC para evitar problemas de timezone
+                    DataHora = DateTime.UtcNow,
                 };
 
-                // Repository já trata erros internamente (não propaga exceções)
                 await metricaRepository.SalvarMetricaAsync(metrica, cancellationToken);
             }
             catch (Exception ex)
             {
-                // Último nível de proteção - nunca deve chegar aqui se repository estiver bem implementado
                 _logger.LogError(ex, "Erro crítico no serviço de telemetria ao registrar métrica");
             }
         }, cancellationToken);
 
-        // Método retorna imediatamente - não bloqueia o thread principal
         _logger.LogTrace("Métrica enfileirada: {NomeApi} - {Endpoint} - {TempoMs}ms", 
             nomeApi, endpoint, tempoResposta);
     }
@@ -89,25 +85,23 @@ public class TelemetriaService : ITelemetriaService
         {
             _logger.LogInformation("Consultando telemetria para data: {DataReferencia}", dataReferencia);
 
-            // Usar um scope para consulta também para consistência
             using var scope = _scopeFactory.CreateScope();
             var metricaRepository = scope.ServiceProvider.GetRequiredService<IMetricaRepository>();
             
-            // Buscar métricas agregadas do repositório
             var metricasAgregadas = await metricaRepository.ObterMetricasPorDataAsync(dataReferencia, cancellationToken);
 
-            // Agrupar por NomeApi conforme especificação do desafio
+            // Agrupar por NomeApi e calcular métricas agregadas
             var telemetriasPorApi = metricasAgregadas
                 .GroupBy(m => m.NomeApi)
                 .Select(grupo => new TelemetriaApiDTO(
                     NomeApi: grupo.Key,
                     QtdRequisicoes: grupo.Sum(x => x.QtdRequisicoes),
-                    TempoMedio: Math.Round(grupo.Average(x => x.TempoMedio), 0), // Arredondar para int conforme spec
+                    TempoMedio: Math.Round(grupo.Average(x => x.TempoMedio), 0),
                     TempoMinimo: grupo.Min(x => x.TempoMinimo),
                     TempoMaximo: grupo.Max(x => x.TempoMaximo),
                     PercentualSucesso: Math.Round(
                         grupo.Sum(x => x.QtdRequisicoes * x.PercentualSucesso) / grupo.Sum(x => x.QtdRequisicoes), 
-                        2) // Manter 2 casas decimais para percentual
+                        2)
                 ))
                 .OrderBy(t => t.NomeApi)
                 .ToList();

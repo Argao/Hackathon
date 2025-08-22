@@ -37,25 +37,21 @@ public class CachedProdutoService : ICachedProdutoService
 
     public async Task<Produto?> GetProdutoAdequadoAsync(ValorMonetario valor, PrazoMeses prazo, CancellationToken ct = default)
     {
-        // Buscar todos os produtos em cache
         var todosProdutos = await GetAllAsync(ct);
         
-        // Aplicar filtro usando dados em memória
         return todosProdutos?.FirstOrDefault(p => p.AtendeRequisitos(valor, prazo.Meses));
     }
 
     public async Task<IEnumerable<Produto>?> GetAllAsync(CancellationToken ct = default)
     {
-        // Tentar buscar do cache primeiro
         if (_cache.TryGetValue(CACHE_KEY_ALL, out List<Produto>? todosProdutos))
         {
             _logger.LogDebug("⚡ Cache hit: {Count} produtos obtidos da memória (ZERO latência)", todosProdutos?.Count ?? 0);
             return todosProdutos;
         }
 
-        _logger.LogInformation("🔥 Cache miss: Buscando TODOS os produtos do SQL Server (apenas 4 registros)");
+        _logger.LogInformation("Cache miss: buscando produtos do SQL Server");
         
-        // Buscar do banco
         todosProdutos = (await _produtoRepository.GetAllAsync(ct))?.ToList();
         
         if (todosProdutos?.Any() == true)

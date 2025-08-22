@@ -10,8 +10,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<ResultadoSimulacao> ResultadosSimulacao => Set<ResultadoSimulacao>();
     public DbSet<Parcela> Parcelas => Set<Parcela>();
     public DbSet<MetricaRequisicao> Metricas => Set<MetricaRequisicao>();
-    
-    // IMPORTANTE: Produto NÃO está aqui - é entidade read-only do SQL Server externo
 
 
     private static readonly Func<AppDbContext, CancellationToken, Task<int>> _countSimulacoesQuery =
@@ -20,10 +18,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        // PERFORMANCE: Configurar splitting behavior para queries com múltiplas coleções
         modelBuilder.HasDefaultSchema("main");
         
-        // Configuração de conversões para Value Objects
         ConfigureValueObjectConversions(modelBuilder);
 
         // Configuração da tabela SIMULACAO
@@ -33,7 +29,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             
             entity.HasKey(e => e.IdSimulacao);
             
-            // Índices básicos
             entity.HasIndex(e => e.CodigoProduto)
                 .HasDatabaseName("IX_SIMULACAO_CO_PRODUTO");
             
@@ -96,7 +91,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             
             entity.HasKey(e => e.IdResultado);
             
-            // Índice para performance nas consultas por simulação
             entity.HasIndex(e => e.IdSimulacao)
                 .HasDatabaseName("IX_RESULTADO_SIMULACAO_ID_SIMULACAO");
             
@@ -237,11 +231,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     {
         if (!optionsBuilder.IsConfigured)
         {
-            // Fallback configuration - geralmente configurado via DI
             return;
         }
 
-        // PERFORMANCE: Configurações de otimização
         optionsBuilder.UseQueryTrackingBehavior(QueryTrackingBehavior.TrackAll);
         
         base.OnConfiguring(optionsBuilder);
@@ -251,14 +243,11 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     {
         try
         {
-            // PERFORMANCE CRÍTICA: Detectar e otimizar batch inserts
             var entries = ChangeTracker.Entries();
             var parcelas = entries.Where(e => e.Entity is Parcela && e.State == EntityState.Added).Count();
             
             if (parcelas > 10)
             {
-                // Para muitas parcelas, usar ExecuteUpdate em batch seria melhor
-                // Mas como EF Core faz cascade automático, vamos confiar no batch interno
                 Console.WriteLine($"⚡ BATCH INSERT: {parcelas} parcelas sendo inseridas em lote");
             }
             
@@ -275,22 +264,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         }
         catch (DbUpdateException ex)
         {
-            // Log mais detalhado para debug de performance
             throw new InvalidOperationException($"Erro ao salvar alterações no banco: {ex.Message}", ex);
         }
     }
 
-    /// <summary>
-    /// Configura as conversões para Value Objects das entidades LOCAIS apenas
-    /// </summary>
     private static void ConfigureValueObjectConversions(ModelBuilder modelBuilder)
     {
-        // IMPORTANTE: Produto NÃO está aqui porque é uma entidade READ-ONLY do SQL Server externo
-        // A entidade Produto é configurada apenas no ProdutoDbContext
-        
-        // Configuração para VolumeSimuladoAgregado - é resultado de agregação, não precisa de key
         var volumeEntity = modelBuilder.Entity<VolumeSimuladoAgregado>();
-        volumeEntity.HasNoKey(); // Entidade keyless - resultado de agregação
+        volumeEntity.HasNoKey();
         
         // Conversão para TaxaJuros
         volumeEntity.Property(e => e.TaxaMediaJuro)
