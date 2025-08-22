@@ -1,7 +1,7 @@
 using FluentValidation;
 using Hackathon.Application.Commands;
 using Hackathon.Application.Interfaces;
-using Hackathon.Abstractions.Exceptions;
+using Hackathon.Domain.Exceptions;
 using Hackathon.Application.Queries;
 using Hackathon.Application.Results;
 using Hackathon.Domain.Entities;
@@ -55,13 +55,13 @@ public class SimulacaoService : ISimulacaoService
         // Validação do comando
         var validationResult = await _simulacaoValidator.ValidateAsync(command, ct);
         if (!validationResult.IsValid)
-            throw new Hackathon.Abstractions.Exceptions.ValidationException(
+            throw new Hackathon.Domain.Exceptions.ValidationException(
                 validationResult.Errors.Select(e => e.ErrorMessage));
 
         // Validação com Value Objects
         var valueObjectsResult = command.ToValueObjects();
         if (!valueObjectsResult.IsSuccess)
-            throw new Hackathon.Abstractions.Exceptions.ValidationException(valueObjectsResult.Error);
+            throw new Hackathon.Domain.Exceptions.ValidationException(valueObjectsResult.Error);
 
         var (valorEmprestimo, prazoMeses) = valueObjectsResult.Value;
 
@@ -145,7 +145,7 @@ public class SimulacaoService : ISimulacaoService
         // Validação da query
         var validationResult = await _listarValidator.ValidateAsync(query, ct);
         if (!validationResult.IsValid)
-            throw new Hackathon.Abstractions.Exceptions.ValidationException(
+            throw new Hackathon.Domain.Exceptions.ValidationException(
                 validationResult.Errors.Select(e => e.ErrorMessage));
 
         var pageNumber = query.GetValidPageNumber();
@@ -180,7 +180,7 @@ public class SimulacaoService : ISimulacaoService
         // Validação da query
         var validationResult = await _volumeValidator.ValidateAsync(query, ct);
         if (!validationResult.IsValid)
-            throw new Hackathon.Abstractions.Exceptions.ValidationException(
+            throw new Hackathon.Domain.Exceptions.ValidationException(
                 validationResult.Errors.Select(e => e.ErrorMessage));
 
         var dadosAgregados = await _simulacaoRepository.ObterVolumeSimuladoPorProdutoAsync(query.DataReferencia, ct);

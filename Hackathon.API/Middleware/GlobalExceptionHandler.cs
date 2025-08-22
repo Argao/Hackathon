@@ -1,6 +1,6 @@
 using System.Net;
 using System.Text.Json;
-using Hackathon.Abstractions.Exceptions;
+using Hackathon.Domain.Exceptions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 

@@ -8,7 +8,6 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Hackathon.Domain\Hackathon.Domain.csproj" />
-      <ProjectReference Include="..\Hackathon.Abstractions\Hackathon.Abstractions.csproj" />
     </ItemGroup>
 
     <ItemGroup>

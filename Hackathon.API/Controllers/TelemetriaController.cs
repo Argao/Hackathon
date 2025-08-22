@@ -1,6 +1,6 @@
 using Hackathon.API.Contracts.Responses;
 using Hackathon.Application.Interfaces;
-using Hackathon.Abstractions.Exceptions;
+using Hackathon.Domain.Exceptions;
 using Mapster;
 using Microsoft.AspNetCore.Mvc;
 
@@ -47,7 +47,7 @@ public class TelemetriaController : ControllerBase
         // Validação básica de data
         if (dataReferencia > DateOnly.FromDateTime(DateTime.Now))
         {
-            throw new Hackathon.Abstractions.Exceptions.ValidationException("Data de referência não pode ser futura");
+            throw new Hackathon.Domain.Exceptions.ValidationException("Data de referência não pode ser futura");
         }
 
         // Consultar telemetria no serviço

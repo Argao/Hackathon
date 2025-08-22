@@ -25,7 +25,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Hackathon.Abstractions\Hackathon.Abstractions.csproj" />
       <ProjectReference Include="..\Hackathon.Infrastructure\Hackathon.Infrastructure.csproj" />
     </ItemGroup>
 

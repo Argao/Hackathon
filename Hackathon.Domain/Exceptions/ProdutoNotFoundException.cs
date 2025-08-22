@@ -1,4 +1,4 @@
-namespace Hackathon.Abstractions.Exceptions;
+namespace Hackathon.Domain.Exceptions;
 
 /// <summary>
 /// Exceção lançada quando um produto não é encontrado

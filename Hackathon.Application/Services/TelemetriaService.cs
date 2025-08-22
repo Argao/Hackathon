@@ -1,6 +1,6 @@
 using Hackathon.Application.DTOs.Responses;
 using Hackathon.Application.Interfaces;
-using Hackathon.Abstractions.Exceptions;
+using Hackathon.Domain.Exceptions;
 using Hackathon.Domain.Entities;
 using Hackathon.Domain.Interfaces.Repositories;
 using Hackathon.Domain.ValueObjects;

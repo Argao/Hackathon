@@ -1,4 +1,4 @@
-namespace Hackathon.Abstractions.Exceptions;
+namespace Hackathon.Domain.Exceptions;
 
 /// <summary>
 /// Exceção base para erros de domínio
