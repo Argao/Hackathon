@@ -22,6 +22,14 @@
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="8.0.10" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Hackathon.API\Hackathon.API.csproj" />
+        <ProjectReference Include="..\Hackathon.Infrastructure\Hackathon.Infrastructure.csproj" />
+        <ProjectReference Include="..\Hackathon.Domain\Hackathon.Domain.csproj" />
+        <ProjectReference Include="..\Hackathon.Application\Hackathon.Application.csproj" />
     </ItemGroup>
 
 </Project>

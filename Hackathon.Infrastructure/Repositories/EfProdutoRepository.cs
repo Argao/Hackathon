@@ -23,11 +23,18 @@ public class EfProdutoRepository : IProdutoRepository
 
     public async Task<IEnumerable<Produto>?> GetAllAsync(CancellationToken ct = default)
     {
-        
-        // PERFORMANCE: AsNoTracking pois são dados read-only
-        return await _context.Produtos
-            .AsNoTracking()
-            .OrderBy(p => p.Codigo)
-            .ToListAsync(ct);
+        try
+        {
+            // PERFORMANCE: AsNoTracking pois são dados read-only
+            return await _context.Produtos
+                .AsNoTracking()
+                .OrderBy(p => p.Codigo)
+                .ToListAsync(ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao obter produtos do banco de dados");
+            return null;
+        }
     }
 }
