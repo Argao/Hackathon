@@ -52,7 +52,7 @@ public static class ServiceCollectionExtensions
         {
             options.UseSqlite(localConnectionString, sqliteOptions =>
             {
-                sqliteOptions.CommandTimeout(30);
+                sqliteOptions.CommandTimeout(60); // Aumentado para 60s na primeira inicialização
             });
             
             // PERFORMANCE CRÍTICA: Configurações para otimizar batch inserts
@@ -113,6 +113,9 @@ public static class ServiceCollectionExtensions
 
         // PERFORMANCE: Warm-up service para resolver Cold Start
         services.AddHostedService<WarmupService>();
+
+        // Database Initialization Service
+        services.AddScoped<DatabaseInitializationService>();
 
         return services;
     }

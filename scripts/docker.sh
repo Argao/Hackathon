@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ===========================
-# Script Docker Compose - Hackathon API
+# Script Docker - Hackathon API
 # ===========================
 
 set -e
@@ -36,17 +36,19 @@ run_production() {
     print_header "Executando em Produção"
     
     print_warning "Parando containers existentes..."
-    docker-compose down --remove-orphans 2>/dev/null || true
+    docker compose down --remove-orphans 2>/dev/null || true
     
     print_warning "Iniciando aplicação..."
-    docker-compose up --build -d
+    docker compose --profile prod up --build -d
     
     print_warning "Aguardando containers..."
     sleep 15
     
+    # Banco será inicializado automaticamente pelo container
+    
     # Verificar status
     echo -e "\n${YELLOW}Status dos containers:${NC}"
-    docker-compose ps
+    docker compose ps
     
     # Testar health check
     echo -e "\n${YELLOW}Testando health check...${NC}"
@@ -59,7 +61,7 @@ run_production() {
     else
         print_error "Health check falhou"
         echo -e "\n${YELLOW}Logs da aplicação:${NC}"
-        docker-compose logs hackathon-api
+        docker compose logs hackathon-api
     fi
 }
 
@@ -68,17 +70,17 @@ run_development() {
     print_header "Executando em Desenvolvimento"
     
     print_warning "Parando containers existentes..."
-    docker-compose -f docker-compose.dev.yml down --remove-orphans 2>/dev/null || true
+    docker compose --profile dev down --remove-orphans 2>/dev/null || true
     
     print_warning "Iniciando aplicação (dev)..."
-    docker-compose -f docker-compose.dev.yml up --build -d
+    docker compose --profile dev up --build -d
     
     print_warning "Aguardando containers..."
     sleep 15
     
     # Verificar status
     echo -e "\n${YELLOW}Status dos containers (dev):${NC}"
-    docker-compose -f docker-compose.dev.yml ps
+    docker compose --profile dev ps
     
     # Testar health check
     echo -e "\n${YELLOW}Testando health check...${NC}"
@@ -92,7 +94,7 @@ run_development() {
     else
         print_error "Health check falhou"
         echo -e "\n${YELLOW}Logs da aplicação:${NC}"
-        docker-compose -f docker-compose.dev.yml logs hackathon-api-dev
+        docker compose --profile dev logs hackathon-api-dev
     fi
 }
 
@@ -101,10 +103,10 @@ stop_services() {
     print_header "Parando Serviços"
     
     print_warning "Parando produção..."
-    docker-compose down 2>/dev/null || true
+    docker compose down 2>/dev/null || true
     
     print_warning "Parando desenvolvimento..."
-    docker-compose -f docker-compose.dev.yml down 2>/dev/null || true
+    docker compose --profile dev down 2>/dev/null || true
     
     print_success "Todos os serviços foram parados"
 }
@@ -117,10 +119,10 @@ show_logs() {
     
     case "$ENV" in
         "prod"|"production")
-            docker-compose logs -f hackathon-api
+            docker compose logs -f hackathon-api
             ;;
         "dev"|"development")
-            docker-compose -f docker-compose.dev.yml logs -f hackathon-api-dev
+            docker compose --profile dev logs -f hackathon-api-dev
             ;;
         *)
             print_error "Ambiente inválido: $ENV"
@@ -134,10 +136,10 @@ show_status() {
     print_header "Status dos Containers"
     
     echo -e "${YELLOW}Produção:${NC}"
-    docker-compose ps 2>/dev/null || echo "Nenhum container de produção rodando"
+    docker compose ps 2>/dev/null || echo "Nenhum container de produção rodando"
     
     echo -e "\n${YELLOW}Desenvolvimento:${NC}"
-    docker-compose -f docker-compose.dev.yml ps 2>/dev/null || echo "Nenhum container de desenvolvimento rodando"
+    docker compose --profile dev ps 2>/dev/null || echo "Nenhum container de desenvolvimento rodando"
     
     echo -e "\n${YELLOW}Todos os containers Docker:${NC}"
     docker ps --filter label=com.docker.compose.project=hackathon --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
@@ -160,7 +162,6 @@ cleanup() {
     
     print_warning "Removendo redes..."
     docker network rm hackathon-network 2>/dev/null || true
-    docker network rm hackathon-dev-network 2>/dev/null || true
     
     print_success "Limpeza concluída"
 }

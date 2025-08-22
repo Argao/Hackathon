@@ -16,10 +16,10 @@ namespace Hackathon.API.Contracts.Requests;
 /// </remarks>
 public sealed record ListarSimulacoesRequest(
     [property: JsonPropertyName("pagina")]
-    [property: Range(1, int.MaxValue, ErrorMessage = "A página deve ser maior que zero")]
+    [Range(1, int.MaxValue, ErrorMessage = "A página deve ser maior que zero")]
     int Pagina = 1,
     
     [property: JsonPropertyName("qtdRegistrosPagina")]
-    [property: Range(1, 100, ErrorMessage = "A quantidade de registros deve estar entre 1 e 100")]
+    [Range(1, 100, ErrorMessage = "A quantidade de registros deve estar entre 1 e 100")]
     int QtdRegistrosPagina = 10
 );

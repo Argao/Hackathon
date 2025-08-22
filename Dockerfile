@@ -14,17 +14,19 @@ COPY ["Hackathon.Application/Hackathon.Application.csproj", "Hackathon.Applicati
 COPY ["Hackathon.Infrastructure/Hackathon.Infrastructure.csproj", "Hackathon.Infrastructure/"]
 COPY ["Hackathon.Domain/Hackathon.Domain.csproj", "Hackathon.Domain/"]
 COPY ["global.json", "./"]
-COPY ["Hackathon.sln", "./"]
 
-# Restore das dependências
-RUN dotnet restore "Hackathon.sln"
+# Restore das dependências de todos os projetos necessários
+RUN dotnet restore "Hackathon.Domain/Hackathon.Domain.csproj" && \
+    dotnet restore "Hackathon.Application/Hackathon.Application.csproj" && \
+    dotnet restore "Hackathon.Infrastructure/Hackathon.Infrastructure.csproj" && \
+    dotnet restore "Hackathon.API/Hackathon.API.csproj"
 
 # Copiar todo o código fonte
 COPY . .
 
 # Build e Publish em um único stage
 WORKDIR "/src/Hackathon.API"
-RUN dotnet publish "Hackathon.API.csproj" -c Release -o /app/publish --no-restore \
+RUN dotnet publish "Hackathon.API.csproj" -c Release -o /app/publish \
     --verbosity minimal
 
 # ===========================
@@ -60,8 +62,14 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl --fail http://localhost:8080/health || exit 1
 
+# Script de inicialização
+
+# Script de inicialização que aplica migrations e inicia a aplicação
+COPY --chown=hackathon:hackathon scripts/start.sh /app/start.sh
+RUN chmod +x /app/start.sh
+
 # Mudar para usuário não-root
 USER hackathon
 
 # Ponto de entrada
-ENTRYPOINT ["dotnet", "Hackathon.API.dll"]
+ENTRYPOINT ["/app/start.sh"]

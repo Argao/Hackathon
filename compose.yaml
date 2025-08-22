@@ -1,7 +1,0 @@
-﻿services:
-  hackathon.api:
-    image: hackathon.api
-    build:
-      context: .
-      dockerfile: Hackathon.API/Dockerfile
-

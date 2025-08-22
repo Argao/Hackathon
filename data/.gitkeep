@@ -1,0 +1,2 @@
+# Este arquivo garante que a pasta data seja versionada no git
+# O arquivo hack.db será criado automaticamente pelo Entity Framework

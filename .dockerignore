@@ -1,88 +1,140 @@
 ﻿# ===========================
-# .dockerignore para Hackathon
+# .dockerignore - Otimização de Build
 # ===========================
 
-# Arquivos do Git
-.git
-.gitignore
-.gitattributes
+# ===========================
+# Arquivos de Sistema
+# ===========================
+.DS_Store
+Thumbs.db
+desktop.ini
 
-# Documentação
-*.md
-hackathon.pdf
-
-# Arquivos de build e output
-**/bin/
-**/obj/
-**/out/
-**/publish/
-**/Release/
-**/Debug/
-**/x64/
-**/x86/
-**/artifacts/
-
-# NuGet
-**/packages/
-*.nupkg
-nuget.exe
-
-# Visual Studio / Rider
+# ===========================
+# Editores e IDEs
+# ===========================
 .vs/
 .vscode/
 .idea/
+*.swp
+*.swo
+*~
+
+# ===========================
+# .NET Build Outputs
+# ===========================
+bin/
+obj/
+out/
+[Bb]uild/
 *.user
 *.suo
 *.userosscache
 *.sln.docstates
-*.userprefs
-**/launchSettings.json
 
-# Logs
-**/logs/
-*.log
-*.log.*
-
-# Dados locais
-**/data/
-*.db
-*.db-*
-
-# Cache e temp
-**/wwwroot/lib/
-**/.sass-cache/
-**/node_modules/
-**/.npm/
-**/.nuget/
-**/tmp/
-**/.tmp/
-
-# Ferramentas de desenvolvimento  
-**/.dotnet/
-**/.local/
-**/.config/
-
-# Docker
-Dockerfile*
-.dockerignore
-compose*.yml
-compose*.yaml
-
-# Arquivos de sistema
-.DS_Store
-Thumbs.db
-*.swp
-*.swo
-
-# Arquivos de configuração sensíveis
-*.pfx
-*.p12
-*.key
-**/secrets/
-
-# Testes
-**/TestResults/
-**/coverage/
+# ===========================
+# Testes e Cobertura
+# ===========================
+TestResults/
 *.trx
 *.coverage
 *.coveragexml
+coverage/
+coverage-*/
+lcov.info
+*.opencover.xml
+
+# ===========================
+# NuGet
+# ===========================
+*.nupkg
+*.snupkg
+packages/
+project.lock.json
+project.assets.json
+*.nuget.props
+*.nuget.targets
+
+# ===========================
+# Configurações Locais
+# ===========================
+.env
+.env.*
+appsettings.Local.json
+appsettings.*.Local.json
+secrets.json
+
+# ===========================
+# Bancos de Dados
+# ===========================
+# Ignorar arquivos de banco mas manter a pasta data/
+data/*.db
+data/*.db-shm
+data/*.db-wal
+data/*.sqlite
+data/*.sqlite3
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+*.mdf
+*.ldf
+*.ndf
+*.bak
+*.trn
+
+# ===========================
+# Docker e Volumes
+# ===========================
+docker-compose.override.yml
+docker-compose.local.yml
+.docker/
+docker/
+**/docker-data/
+**/mssql_data/
+# **/data/  # COMENTADO: Necessário para o volume do SQLite
+**/storage/
+
+# ===========================
+# Logs e Arquivos Temporários
+# ===========================
+*.log
+Logs/
+logs/
+temp/
+tmp/
+
+# ===========================
+# Certificados e Chaves
+# ===========================
+*.pfx
+*.p12
+*.cer
+*.pem
+*.key
+
+# ===========================
+# Git
+# ===========================
+.git/
+.gitignore
+.gitattributes
+
+# ===========================
+# Documentação
+# ===========================
+README.md
+*.md
+docs/
+
+# ===========================
+# Scripts de Desenvolvimento
+# ===========================
+# scripts/start.sh é necessário para inicialização
+*.bat
+*.ps1
+
+# ===========================
+# Arquivos de Projeto Específicos
+# ===========================
+hackathon.pdf

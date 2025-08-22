@@ -108,7 +108,12 @@ secrets.json
 ## =========================
 ## Bancos locais (SQLite / SQL Server arquivos)
 ## =========================
-# SQLite
+# SQLite - Ignorar arquivos de banco mas manter a pasta data/
+data/*.db
+data/*.db-shm
+data/*.db-wal
+data/*.sqlite
+data/*.sqlite3
 *.db
 *.db-shm
 *.db-wal
@@ -132,7 +137,7 @@ docker-compose.local.yml
 docker/
 **/docker-data/
 **/mssql_data/
-**/data/
+# **/data/  # COMENTADO: Necessário para o volume do SQLite
 **/storage/
 
 ## =========================

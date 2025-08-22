@@ -3,6 +3,7 @@ using System.Reflection;
 using Hackathon.API.Mappings;
 using Hackathon.API.Middleware;
 using Hackathon.Infrastructure.DependencyInjection;
+using Hackathon.Infrastructure.Services;
 using Mapster;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
@@ -77,6 +78,36 @@ TypeAdapterConfig.GlobalSettings.Compile();
 
 var app = builder.Build();
 
+// Aplicar migrations automaticamente na inicialização
+using (var scope = app.Services.CreateScope())
+{
+    var dbInitializer = scope.ServiceProvider.GetRequiredService<DatabaseInitializationService>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    
+    try
+    {
+        logger.LogInformation("🔄 Iniciando inicialização do banco de dados...");
+        await dbInitializer.InitializeDatabaseAsync();
+        logger.LogInformation("✅ Banco de dados inicializado com sucesso!");
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "❌ Erro crítico ao inicializar banco de dados: {Message}", ex.Message);
+        
+        // Em desenvolvimento, permitir continuar com erro
+        if (app.Environment.IsDevelopment())
+        {
+            logger.LogWarning("⚠️ Continuando em modo desenvolvimento apesar do erro...");
+        }
+        else
+        {
+            // Em produção, falhar rápido
+            logger.LogCritical("💥 Falha crítica na inicialização do banco. Encerrando aplicação.");
+            throw;
+        }
+    }
+}
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -93,7 +124,13 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-app.UseHttpsRedirection();
+// Desabilitar HTTPS redirection em container (quando DOTNET_RUNNING_IN_CONTAINER=true)
+var isRunningInContainer = Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true";
+if (!isRunningInContainer)
+{
+    app.UseHttpsRedirection();
+}
+
 
 // Servir arquivos estáticos (necessário para CSS personalizado do Swagger)
 app.UseStaticFiles();

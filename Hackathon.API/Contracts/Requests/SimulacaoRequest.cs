@@ -18,11 +18,11 @@ namespace Hackathon.API.Contracts.Requests;
 public sealed record SimulacaoRequest(
     [property: JsonPropertyName("valorDesejado")]
     [property: DefaultValue(900.00)]
-    [property: Range(1, double.MaxValue, ErrorMessage = "O valor desejado deve ser maior que zero")]
+    [Range(1, double.MaxValue, ErrorMessage = "O valor desejado deve ser maior que zero")]
     decimal ValorDesejado,
     
     [property: JsonPropertyName("prazo")]
     [property: DefaultValue(5)]
-    [property: Range(1, 360, ErrorMessage = "O prazo deve estar entre 1 e 360 meses")]
+    [Range(1, 360, ErrorMessage = "O prazo deve estar entre 1 e 360 meses")]
     int Prazo
 );

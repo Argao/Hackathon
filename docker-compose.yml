@@ -1,12 +1,8 @@
-# ===========================
-# Docker Compose - Hackathon
-# ===========================
 
-version: '3.8'
 
 services:
   # ===========================
-  # Aplicação Principal
+  # Aplicação Principal - Produção
   # ===========================
   hackathon-api:
     container_name: hackathon-api
@@ -14,75 +10,63 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      args:
-        - BUILDKIT_INLINE_CACHE=1
     ports:
       - "8080:8080"
     environment:
-      - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:8080
-      - ConnectionStrings__LocalDb=/app/data/hack.db
+      - ASPNETCORE_ENVIRONMENT=Production
+      - DOTNET_RUNNING_IN_CONTAINER=true
+      - ConnectionStrings__ProdutosDb=Server=dbhackathon.database.windows.net,1433;Database=hack;User ID=hack;Password=Password23;Encrypt=True;TrustServerCertificate=True;MultipleActiveResultSets=True;Connection Timeout=30;
+      - ConnectionStrings__LocalDb=Data Source=/app/data/hack.db
+      - ConnectionStrings__EventHub=Endpoint=sb://eventhack.servicebus.windows.net/;SharedAccessKeyName=hack;SharedAccessKey=HeHeVaVqyVkntO2FnjQcs2Ilh/4MUDo4y+AEhKp8z+g=;EntityPath=simulacoes
     volumes:
-      - hackathon-data:/app/data
+      - ./data:/app/data:rw
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
+      start_period: 60s
     restart: unless-stopped
     networks:
       - hackathon-network
-    depends_on:
-      hackathon-db:
-        condition: service_healthy
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 512M
-        reservations:
-          cpus: '0.5'
-          memory: 256M
+    profiles:
+      - prod
+      - default
 
   # ===========================
-  # Banco de Dados Local (SQLite via volume)
+  # Aplicação - Desenvolvimento
   # ===========================
-  hackathon-db:
-    container_name: hackathon-db-init
-    image: alpine:3.19
-    command: |
-      sh -c "
-        mkdir -p /data &&
-        touch /data/hack.db &&
-        chmod 666 /data/hack.db &&
-        echo 'Banco SQLite inicializado' &&
-        tail -f /dev/null
-      "
+  hackathon-api-dev:
+    container_name: hackathon-api-dev
+    image: hackathon-api:dev
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5000:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+      - DOTNET_RUNNING_IN_CONTAINER=true
+      - ConnectionStrings__ProdutosDb=Server=dbhackathon.database.windows.net,1433;Database=hack;User ID=hack;Password=Password23;Encrypt=True;TrustServerCertificate=True;MultipleActiveResultSets=True;Connection Timeout=30;
+      - ConnectionStrings__LocalDb=Data Source=/app/data/hack.db
+      - ConnectionStrings__EventHub=Endpoint=sb://eventhack.servicebus.windows.net/;SharedAccessKeyName=hack;SharedAccessKey=HeHeVaVqyVkntO2FnjQcs2Ilh/4MUDo4y+AEhKp8z+g=;EntityPath=simulacoes
     volumes:
-      - hackathon-data:/data
+      - ./data:/app/data:rw
+      - ./Hackathon.API/appsettings.Development.json:/app/appsettings.Development.json:ro
     healthcheck:
-      test: ["CMD", "test", "-f", "/data/hack.db"]
-      interval: 10s
-      timeout: 5s
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
       retries: 3
-      start_period: 10s
+      start_period: 60s
     restart: unless-stopped
     networks:
       - hackathon-network
+    profiles:
+      - dev
 
-# ===========================
-# Volumes Persistentes
-# ===========================
-volumes:
-  hackathon-data:
-    driver: local
-    name: hackathon-data
-
-# ===========================
-# Rede Isolada
-# ===========================
 networks:
   hackathon-network:
     driver: bridge
-    name: hackathon-network
