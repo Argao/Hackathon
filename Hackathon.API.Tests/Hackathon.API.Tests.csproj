@@ -24,4 +24,10 @@
         </PackageReference>
     </ItemGroup>
 
+    <ItemGroup>
+        <ProjectReference Include="..\Hackathon.API\Hackathon.API.csproj" />
+        <ProjectReference Include="..\Hackathon.Application\Hackathon.Application.csproj" />
+        <ProjectReference Include="..\Hackathon.Domain\Hackathon.Domain.csproj" />
+    </ItemGroup>
+
 </Project>
