@@ -110,4 +110,46 @@ public class EventHubService : IEventHubService, IDisposable
             _disposed = true;
         }
     }
+    
+    
+    /// <summary>
+    /// Envia dados de simulação para o EventHub de forma síncrona
+    /// </summary>
+    public void EnviarSimulacao(string simulacaoData)
+    {
+        if (_disposed)
+            throw new ObjectDisposedException(nameof(EventHubService));
+    
+        try
+        {
+            // Criar evento com dados comprimidos para melhorar performance
+            var eventData = new EventData(Encoding.UTF8.GetBytes(simulacaoData));
+        
+            // Adicionar propriedades para facilitar filtros no consumidor
+            eventData.Properties["EventType"] = "SimulacaoRealizada";
+            eventData.Properties["Timestamp"] = DateTimeOffset.UtcNow.ToString("O");
+            eventData.Properties["Source"] = "HackathonAPI";
+
+            // Enviar evento de forma síncrona (bloqueante)
+            _producer.SendAsync(new[] { eventData }, CancellationToken.None).GetAwaiter().GetResult();
+        
+            _logger.LogInformation("Simulação enviada com sucesso para o EventHub");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao enviar simulação para o EventHub: {ErrorMessage}", ex.Message);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Envia dados de simulação para o EventHub de forma síncrona usando um objeto
+    /// </summary>
+    public void EnviarSimulacao<T>(T simulacao) where T : class
+    {
+        ArgumentNullException.ThrowIfNull(simulacao);
+    
+        var json = JsonSerializer.Serialize(simulacao, _jsonOptions);
+        EnviarSimulacao(json);
+    }
 }

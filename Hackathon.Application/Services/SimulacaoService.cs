@@ -96,45 +96,36 @@ public class SimulacaoService : ISimulacaoService
                 )).ToList()
             )).ToList()
         );
-
-        // Log informativo sobre o início do processamento
-        _logger.LogInformation("💾 Iniciando persistência da simulação ID: {SimulacaoId}", result.Id);
-        _logger.LogInformation("📡 Iniciando envio da simulação para EventHub - ID: {SimulacaoId}", result.Id);
-
-        // 🚀 OTIMIZAÇÃO ULTRA AGRESSIVA: EventHub em background, persistência prioritária
-        _logger.LogDebug("⚡ ESTRATÉGIA: Persistir primeiro, EventHub depois");
-        var persistirStart = DateTime.UtcNow;
         
-        // ESTRATÉGIA: Persistir PRIMEIRO (crítico para API response)
         try
         {
-            await _simulacaoRepository.AdicionarAsync(simulacao, ct);
-            var persistirDuration = DateTime.UtcNow - persistirStart;
-            _logger.LogDebug("✅ Persistência concluída em {Duration}ms", persistirDuration.TotalMilliseconds);
-            
-            // EventHub em BACKGROUND - não impacta tempo de resposta
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    await _eventHubService.EnviarSimulacaoAsync(result, CancellationToken.None);
-                    _logger.LogInformation("✅ EventHub enviado com sucesso (background) - ID: {SimulacaoId}", result.Id);
+            var persistirStart = DateTime.UtcNow;
+
+// Inicia a tarefa de persistência
+            var persistirTask = _simulacaoRepository.AdicionarAsync(simulacao, ct);
+
+// Usa ThreadPool para processar em background sem overhead de Task.Run
+            ThreadPool.QueueUserWorkItem(_ => {
+                try {
+                    _eventHubService.EnviarSimulacao(result);
+                    _logger.LogInformation("✅ EventHub enviado com sucesso - ID: {SimulacaoId}", result.Id);
                 }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "⚠️ EventHub falhou (background), mas simulação foi persistida - ID: {SimulacaoId}", result.Id);
+                catch (Exception ex) {
+                    _logger.LogWarning(ex, "⚠️ EventHub falhou em background - ID: {SimulacaoId}", result.Id);
                 }
-            }, CancellationToken.None);
-            
-            _logger.LogInformation("🚀 Simulação processada - ID: {SimulacaoId} (Persistência ✅, EventHub em background)", result.Id);
+            }, null);
+
+// Aguarda apenas a persistência (crítica)
+            await persistirTask;
+
+            var totalDuration = DateTime.UtcNow - persistirStart;
+            _logger.LogInformation("✅ Persistência concluída em {Duration}ms - ID: {SimulacaoId}", totalDuration.TotalMilliseconds, result.Id);
         }
-        catch (Exception persistenciaException)
+        catch (Exception ex)
         {
-            // PERSISTÊNCIA É CRÍTICA - se falha, toda operação falha
-            _logger.LogError(persistenciaException, "🚨 FALHA CRÍTICA na persistência - ID: {SimulacaoId}", result.Id);
+            _logger.LogError(ex, "🚨 FALHA CRÍTICA na persistência - ID: {SimulacaoId}", result.Id);
             throw;
         }
-
         return Result<SimulacaoResult>.Success(result);
     }
 
