@@ -85,17 +85,17 @@ public class SimulacaoService : ISimulacaoService
         // Mapear resultado direto dos cálculos antes de persistir
         var result = new SimulacaoResult(
             Id: simulacao.IdSimulacao,
-            CodigoProduto: simulacao.CodigoProduto,
-            DescricaoProduto: simulacao.DescricaoProduto,
-            TaxaJuros: simulacao.TaxaJuros,
+            CodigoProduto: produto.Codigo,
+            DescricaoProduto: produto.Descricao,
+            TaxaJuros: produto.TaxaMensal,
             Resultados: resultados.Select(r => new ResultadoCalculoAmortizacao(
                 TipoAmortizacao: r.Tipo.ToString(),
-                Parcelas: r.Parcelas.Select(p => new ParcelaCalculada(
+                Parcelas: r.Parcelas?.Select(p => new ParcelaCalculada(
                     Numero: p.Numero,
-                    ValorAmortizacao: p.ValorAmortizacao,
-                    ValorJuros: p.ValorJuros,
-                    ValorPrestacao: p.ValorPrestacao
-                )).ToList()
+                    ValorAmortizacao: p.ValorAmortizacao.Valor,
+                    ValorJuros: p.ValorJuros.Valor,
+                    ValorPrestacao: p.ValorPrestacao.Valor
+                )).ToList() ?? new List<ParcelaCalculada>()
             )).ToList()
         );
 
@@ -156,9 +156,9 @@ public class SimulacaoService : ISimulacaoService
 
         var resumos = simulacoes.Select(s => new SimulacaoResumoResult(
             Id: s.IdSimulacao,
-            ValorDesejado: s.ValorDesejado,
+            ValorDesejado: s.ValorDesejado.Valor,
             Prazo: s.PrazoMeses,
-            ValorTotalParcelas: s.Resultados.SelectMany(r => r.Parcelas).Sum(p => p.ValorPrestacao)
+            ValorTotalParcelas: s.Resultados.SelectMany(r => r.Parcelas ?? Enumerable.Empty<Parcela>()).Sum(p => p.ValorPrestacao.Valor)
         )).ToList();
 
         var result = new PagedResult<SimulacaoResumoResult>(

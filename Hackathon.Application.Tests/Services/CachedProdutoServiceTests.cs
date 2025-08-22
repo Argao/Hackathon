@@ -21,6 +21,10 @@ public class CachedProdutoServiceTests
         _mockCache = new Mock<IMemoryCache>();
         _mockLogger = new Mock<ILogger<CachedProdutoService>>();
 
+        // Configurar o mock do cache para aceitar qualquer chamada Set
+        _mockCache.Setup(x => x.CreateEntry(It.IsAny<object>()))
+            .Returns((object key) => Mock.Of<ICacheEntry>());
+
         _service = new CachedProdutoService(_mockProdutoRepository.Object, _mockCache.Object, _mockLogger.Object);
     }
 

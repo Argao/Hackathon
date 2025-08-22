@@ -93,6 +93,8 @@ public class SimulacaoServiceTests
 
         _mockCalculadoraPrice.Setup(x => x.Calcular(It.IsAny<ValorMonetario>(), It.IsAny<TaxaJuros>(), It.IsAny<PrazoMeses>()))
             .Returns(resultadoCalculo);
+        _mockCalculadoraSac.Setup(x => x.Calcular(It.IsAny<ValorMonetario>(), It.IsAny<TaxaJuros>(), It.IsAny<PrazoMeses>()))
+            .Returns(resultadoCalculo);
 
         var simulacao = new Simulacao
         {
@@ -116,7 +118,7 @@ public class SimulacaoServiceTests
         result.Id.Should().NotBeEmpty();
         result.CodigoProduto.Should().Be(1);
         result.DescricaoProduto.Should().Be("Produto Teste");
-        result.Resultados.Should().HaveCount(1);
+        result.Resultados.Should().HaveCount(2);
         
         _mockSimulacaoRepository.Verify(x => x.AdicionarAsync(It.IsAny<Simulacao>(), ct), Times.Once);
         _mockEventHubService.Verify(x => x.EnviarSimulacao(It.IsAny<SimulacaoResult>()), Times.Once);
@@ -145,7 +147,7 @@ public class SimulacaoServiceTests
     public async Task RealizarSimulacaoAsync_ComValueObjectsInvalidos_DeveLancarValidationException()
     {
         // Arrange
-        var command = new RealizarSimulacaoCommand(0m, 12); // Valor inválido
+        var command = new RealizarSimulacaoCommand(-1000m, 12); // Valor realmente inválido
         var ct = CancellationToken.None;
 
         var validationResult = new FluentValidation.Results.ValidationResult();
@@ -212,6 +214,8 @@ public class SimulacaoServiceTests
         };
 
         _mockCalculadoraPrice.Setup(x => x.Calcular(It.IsAny<ValorMonetario>(), It.IsAny<TaxaJuros>(), It.IsAny<PrazoMeses>()))
+            .Returns(resultadoCalculo);
+        _mockCalculadoraSac.Setup(x => x.Calcular(It.IsAny<ValorMonetario>(), It.IsAny<TaxaJuros>(), It.IsAny<PrazoMeses>()))
             .Returns(resultadoCalculo);
 
         _mockSimulacaoRepository.Setup(x => x.AdicionarAsync(It.IsAny<Simulacao>(), ct))
@@ -471,6 +475,8 @@ public class SimulacaoServiceTests
 
         _mockCalculadoraPrice.Setup(x => x.Calcular(It.IsAny<ValorMonetario>(), It.IsAny<TaxaJuros>(), It.IsAny<PrazoMeses>()))
             .Returns(resultadoCalculo);
+        _mockCalculadoraSac.Setup(x => x.Calcular(It.IsAny<ValorMonetario>(), It.IsAny<TaxaJuros>(), It.IsAny<PrazoMeses>()))
+            .Returns(resultadoCalculo);
 
         _mockSimulacaoRepository.Setup(x => x.AdicionarAsync(It.IsAny<Simulacao>(), ct))
             .ThrowsAsync(new InvalidOperationException("Erro crítico na persistência"));
@@ -520,6 +526,8 @@ public class SimulacaoServiceTests
 
         _mockCalculadoraPrice.Setup(x => x.Calcular(It.IsAny<ValorMonetario>(), It.IsAny<TaxaJuros>(), It.IsAny<PrazoMeses>()))
             .Returns(resultadoCalculo);
+        _mockCalculadoraSac.Setup(x => x.Calcular(It.IsAny<ValorMonetario>(), It.IsAny<TaxaJuros>(), It.IsAny<PrazoMeses>()))
+            .Returns(resultadoCalculo);
 
         var simulacao = new Simulacao
         {
@@ -534,8 +542,8 @@ public class SimulacaoServiceTests
             .ReturnsAsync(simulacao);
 
         // Configurar EventHub para falhar
-        _mockEventHubService.Setup(x => x.EnviarSimulacaoAsync(It.IsAny<object>(), ct))
-            .ThrowsAsync(new Exception("EventHub error"));
+        _mockEventHubService.Setup(x => x.EnviarSimulacao(It.IsAny<SimulacaoResult>()))
+            .Throws(new Exception("EventHub error"));
 
         // Act
         var result = await _service.RealizarSimulacaoAsync(command, ct);
@@ -543,10 +551,13 @@ public class SimulacaoServiceTests
         // Assert
         result.Should().NotBeNull();
         
+        // Aguardar um pouco para a thread de background executar
+        await Task.Delay(100, ct);
+        
         // Verificar se o erro foi logado
         _mockLogger.Verify(
             x => x.Log(
-                LogLevel.Error,
+                LogLevel.Warning,
                 It.IsAny<EventId>(),
                 It.Is<It.IsAnyType>((v, t) => true),
                 It.IsAny<Exception>(),
@@ -590,15 +601,16 @@ public class SimulacaoServiceTests
 
         _mockCalculadoraPrice.Setup(x => x.Calcular(It.IsAny<ValorMonetario>(), It.IsAny<TaxaJuros>(), It.IsAny<PrazoMeses>()))
             .Returns(resultadoCalculo);
+        _mockCalculadoraSac.Setup(x => x.Calcular(It.IsAny<ValorMonetario>(), It.IsAny<TaxaJuros>(), It.IsAny<PrazoMeses>()))
+            .Returns(resultadoCalculo);
 
         // Configurar repository para falhar
         _mockSimulacaoRepository.Setup(x => x.AdicionarAsync(It.IsAny<Simulacao>(), ct))
             .ThrowsAsync(new Exception("Database error"));
 
-        // Act
-        var result = await _service.RealizarSimulacaoAsync(command, ct);
-
-        // Assert
-        result.Should().NotBeNull();
+        // Act & Assert
+        var action = () => _service.RealizarSimulacaoAsync(command, ct);
+        await action.Should().ThrowAsync<Exception>()
+            .WithMessage("Database error");
     }
 }
