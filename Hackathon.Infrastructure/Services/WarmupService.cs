@@ -1,6 +1,6 @@
+using Hackathon.Domain.Interfaces.Repositories;
 using Hackathon.Application.Interfaces;
 using Hackathon.Application.Services;
-using Hackathon.Domain.Interfaces.Repositories;
 using Hackathon.Infrastructure.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;

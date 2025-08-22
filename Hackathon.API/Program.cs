@@ -37,6 +37,9 @@ app.UseHttpsRedirection();
 // 🔥 Middleware de telemetria ANTES do roteamento para capturar todas as requisições
 app.UseMiddleware<TelemetriaMiddleware>();
 
+// 🛡️ Global Exception Handler
+app.UseMiddleware<GlobalExceptionHandler>();
+
 app.UseAuthorization();
 
 app.MapControllers();

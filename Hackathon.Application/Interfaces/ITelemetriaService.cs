@@ -1,5 +1,4 @@
 using Hackathon.Application.DTOs.Responses;
-using Hackathon.Domain.ValueObjects;
 
 namespace Hackathon.Application.Interfaces;
 
@@ -35,7 +34,7 @@ public interface ITelemetriaService
     /// <param name="dataReferencia">Data para consulta</param>
     /// <param name="cancellationToken">Token de cancelamento</param>
     /// <returns>Dados de telemetria agregados</returns>
-    Task<Result<TelemetriaFinalResponseDTO>> ObterTelemetriaPorDataAsync(
+    Task<TelemetriaFinalResponseDTO> ObterTelemetriaPorDataAsync(
         DateOnly dataReferencia, 
         CancellationToken cancellationToken = default);
 }

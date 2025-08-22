@@ -1,7 +1,6 @@
 using Hackathon.Application.Commands;
 using Hackathon.Application.Queries;
 using Hackathon.Application.Results;
-using Hackathon.Domain.ValueObjects;
 
 namespace Hackathon.Application.Interfaces;
 
@@ -13,15 +12,15 @@ public interface ISimulacaoService
     /// <summary>
     /// Realiza uma simulação de crédito
     /// </summary>
-    Task<Result<SimulacaoResult>> RealizarSimulacaoAsync(RealizarSimulacaoCommand command, CancellationToken ct);
+    Task<SimulacaoResult> RealizarSimulacaoAsync(RealizarSimulacaoCommand command, CancellationToken ct);
 
     /// <summary>
     /// Lista simulações de forma paginada
     /// </summary>
-    Task<Result<PagedResult<SimulacaoResumoResult>>> ListarSimulacoesAsync(ListarSimulacoesQuery query, CancellationToken ct);
+    Task<PagedResult<SimulacaoResumoResult>> ListarSimulacoesAsync(ListarSimulacoesQuery query, CancellationToken ct);
 
     /// <summary>
     /// Obtém volume simulado por data
     /// </summary>
-    Task<Result<VolumeSimuladoResult>> ObterVolumeSimuladoAsync(ObterVolumeSimuladoQuery query, CancellationToken ct);
+    Task<VolumeSimuladoResult> ObterVolumeSimuladoAsync(ObterVolumeSimuladoQuery query, CancellationToken ct);
 }

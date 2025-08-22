@@ -1,6 +1,7 @@
 using FluentValidation;
 using Hackathon.Application.Commands;
 using Hackathon.Application.Interfaces;
+using Hackathon.Abstractions.Exceptions;
 using Hackathon.Application.Queries;
 using Hackathon.Application.Results;
 using Hackathon.Domain.Entities;
@@ -49,17 +50,17 @@ public class SimulacaoService : ISimulacaoService
     /// <summary>
     /// Executa uma simulação de crédito
     /// </summary>
-    public async Task<Result<SimulacaoResult>> RealizarSimulacaoAsync(RealizarSimulacaoCommand command, CancellationToken ct)
+    public async Task<SimulacaoResult> RealizarSimulacaoAsync(RealizarSimulacaoCommand command, CancellationToken ct)
     {
         // Validação do comando
         var validationResult = await _simulacaoValidator.ValidateAsync(command, ct);
         if (!validationResult.IsValid)
-            return Result<SimulacaoResult>.Failure(string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage)));
+            throw new Hackathon.Abstractions.Exceptions.ValidationException(validationResult.Errors.Select(e => e.ErrorMessage));
 
         // Validação com Value Objects
         var valueObjectsResult = command.ToValueObjects();
         if (!valueObjectsResult.IsSuccess)
-            return Result<SimulacaoResult>.Failure(valueObjectsResult.Error);
+            throw new Hackathon.Abstractions.Exceptions.ValidationException(valueObjectsResult.Error);
 
         var (valorEmprestimo, prazoMeses) = valueObjectsResult.Value;
 
@@ -67,8 +68,7 @@ public class SimulacaoService : ISimulacaoService
         var valorMonetario = ValorMonetario.Create(valorEmprestimo.Valor).Value;
         var produto = await _cachedProdutoService.GetProdutoAdequadoAsync(valorMonetario, prazoMeses, ct);
         if (produto is null)
-            return Result<SimulacaoResult>.Failure(
-                $"Nenhum produto disponível para valor {valorEmprestimo} e prazo {prazoMeses}");
+            throw new SimulacaoException($"Nenhum produto disponível para valor {valorEmprestimo} e prazo {prazoMeses}");
 
         // Criar simulação simples
         var simulacao = (command, produto).Adapt<Simulacao>();
@@ -126,19 +126,18 @@ public class SimulacaoService : ISimulacaoService
             _logger.LogError(ex, "🚨 FALHA CRÍTICA na persistência - ID: {SimulacaoId}", result.Id);
             throw;
         }
-        return Result<SimulacaoResult>.Success(result);
+        return result;
     }
 
     /// <summary>
     /// Lista simulações de forma paginada
     /// </summary>
-    public async Task<Result<PagedResult<SimulacaoResumoResult>>> ListarSimulacoesAsync(ListarSimulacoesQuery query, CancellationToken ct)
+    public async Task<PagedResult<SimulacaoResumoResult>> ListarSimulacoesAsync(ListarSimulacoesQuery query, CancellationToken ct)
     {
         // Validação da query
         var validationResult = await _listarValidator.ValidateAsync(query, ct);
         if (!validationResult.IsValid)
-            return Result<PagedResult<SimulacaoResumoResult>>.Failure(
-                string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage)));
+            throw new Hackathon.Abstractions.Exceptions.ValidationException(validationResult.Errors.Select(e => e.ErrorMessage));
 
         var pageNumber = query.GetValidPageNumber();
         var pageSize = query.GetValidPageSize();
@@ -160,19 +159,18 @@ public class SimulacaoService : ISimulacaoService
             PageSize: pageSize
         );
 
-        return Result<PagedResult<SimulacaoResumoResult>>.Success(result);
+        return result;
     }
 
     /// <summary>
     /// Obtém volume simulado por data
     /// </summary>
-    public async Task<Result<VolumeSimuladoResult>> ObterVolumeSimuladoAsync(ObterVolumeSimuladoQuery query, CancellationToken ct)
+    public async Task<VolumeSimuladoResult> ObterVolumeSimuladoAsync(ObterVolumeSimuladoQuery query, CancellationToken ct)
     {
         // Validação da query
         var validationResult = await _volumeValidator.ValidateAsync(query, ct);
         if (!validationResult.IsValid)
-            return Result<VolumeSimuladoResult>.Failure(
-                string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage)));
+            throw new Hackathon.Abstractions.Exceptions.ValidationException(validationResult.Errors.Select(e => e.ErrorMessage));
 
         var dadosAgregados = await _simulacaoRepository.ObterVolumeSimuladoPorProdutoAsync(query.DataReferencia, ct);
         
@@ -183,6 +181,6 @@ public class SimulacaoService : ISimulacaoService
             Produtos: produtos
         );
 
-        return Result<VolumeSimuladoResult>.Success(result);
+        return result;
     }
 }

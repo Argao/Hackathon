@@ -14,6 +14,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hackathon.Application", "Ha
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hackathon.Infrastructure", "Hackathon.Infrastructure\Hackathon.Infrastructure.csproj", "{22DDEDFF-E1E0-451A-A7D8-C3DC25AA242C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hackathon.Abstractions", "Hackathon.Abstractions\Hackathon.Abstractions.csproj", "{5A1B2C3D-4E5F-6G7H-8I9J-K0L1M2N3O4P5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -36,5 +38,9 @@ Global
 		{22DDEDFF-E1E0-451A-A7D8-C3DC25AA242C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{22DDEDFF-E1E0-451A-A7D8-C3DC25AA242C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{22DDEDFF-E1E0-451A-A7D8-C3DC25AA242C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5A1B2C3D-4E5F-6G7H-8I9J-K0L1M2N3O4P5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5A1B2C3D-4E5F-6G7H-8I9J-K0L1M2N3O4P5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5A1B2C3D-4E5F-6G7H-8I9J-K0L1M2N3O4P5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5A1B2C3D-4E5F-6G7H-8I9J-K0L1M2N3O4P5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

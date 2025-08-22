@@ -33,24 +33,13 @@ public class SimulacaoController(ISimulacaoService simulacaoService) : Controlle
         var command = request.Adapt<RealizarSimulacaoCommand>();
         var result = await simulacaoService.RealizarSimulacaoAsync(command, ct);
         
-        if (!result.IsSuccess)
-        {
-            return UnprocessableEntity(new
-            {
-                error = result.Error,
-                message = "Não foi possível processar a simulação",
-                valorInformado = request.ValorDesejado,
-                prazoInformado = request.Prazo
-            });
-        }
-        
         // Mapear resultado para response usando mapeamento manual
         var response = new SimulacaoResponse(
-            IdSimulacao: result.Value.Id,
-            CodigoProduto: result.Value.CodigoProduto,
-            DescricaoProduto: result.Value.DescricaoProduto,
-            TaxaJuros: result.Value.TaxaJuros,
-            ResultadoSimulacao: result.Value.Resultados.Select(r => new ResultadoSimulacaoResponse(
+            IdSimulacao: result.Id,
+            CodigoProduto: result.CodigoProduto,
+            DescricaoProduto: result.DescricaoProduto,
+            TaxaJuros: result.TaxaJuros,
+            ResultadoSimulacao: result.Resultados.Select(r => new ResultadoSimulacaoResponse(
                 Tipo: r.TipoAmortizacao,
                 Parcelas: r.Parcelas.Select(p => new ParcelaResponse(
                     Numero: p.Numero,
@@ -82,13 +71,8 @@ public class SimulacaoController(ISimulacaoService simulacaoService) : Controlle
         // Executar listagem
         var result = await simulacaoService.ListarSimulacoesAsync(query, ct);
         
-        if (!result.IsSuccess)
-        {
-            return BadRequest(new { error = result.Error });
-        }
-        
         // Mapear resultado para response
-        var response = result.Value.Adapt<ListarSimulacoesResponse>();
+        var response = result.Adapt<ListarSimulacoesResponse>();
         return Ok(response);
     }
     
@@ -111,13 +95,8 @@ public class SimulacaoController(ISimulacaoService simulacaoService) : Controlle
         // Executar consulta
         var result = await simulacaoService.ObterVolumeSimuladoAsync(query, ct);
         
-        if (!result.IsSuccess)
-        {
-            return BadRequest(new { error = result.Error });
-        }
-        
         // Mapear resultado para response
-        var response = result.Value.Adapt<VolumeSimuladoResponse>();
+        var response = result.Adapt<VolumeSimuladoResponse>();
         return Ok(response);
     }
 }
