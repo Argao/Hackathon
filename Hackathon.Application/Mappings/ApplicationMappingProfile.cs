@@ -41,5 +41,11 @@ public static class ApplicationMappingProfile
         // Volume Entity mappings
         TypeAdapterConfig<VolumeSimuladoAgregado, VolumeSimuladoProdutoResult>
             .NewConfig();
+
+        TypeAdapterConfig<Parcela, ParcelaCalculada>
+            .NewConfig()
+            .Map(dest => dest.ValorAmortizacao, src => src.ValorAmortizacao.Valor)
+            .Map(dest => dest.ValorJuros, src => src.ValorJuros.Valor)
+            .Map(dest => dest.ValorPrestacao, src => src.ValorPrestacao.Valor);
     }
 }

@@ -2,6 +2,7 @@ using System.Data;
 using Hackathon.API.Mappings;
 using Hackathon.API.Middleware;
 using Hackathon.Infrastructure.DependencyInjection;
+using Mapster;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
@@ -22,6 +23,8 @@ builder.Services.AddInfrastructure(builder.Configuration);
 
 // Configure API Mappings
 ApiMappingProfile.Configure();
+
+TypeAdapterConfig.GlobalSettings.Compile();
 
 var app = builder.Build();
 

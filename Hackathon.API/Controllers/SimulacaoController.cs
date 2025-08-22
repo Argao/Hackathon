@@ -33,22 +33,8 @@ public class SimulacaoController(ISimulacaoService simulacaoService) : Controlle
         var command = request.Adapt<RealizarSimulacaoCommand>();
         var result = await simulacaoService.RealizarSimulacaoAsync(command, ct);
         
-        // Mapear resultado para response usando mapeamento manual
-        var response = new SimulacaoResponse(
-            IdSimulacao: result.Id,
-            CodigoProduto: result.CodigoProduto,
-            DescricaoProduto: result.DescricaoProduto,
-            TaxaJuros: result.TaxaJuros,
-            ResultadoSimulacao: result.Resultados.Select(r => new ResultadoSimulacaoResponse(
-                Tipo: r.TipoAmortizacao,
-                Parcelas: r.Parcelas.Select(p => new ParcelaResponse(
-                    Numero: p.Numero,
-                    ValorAmortizacao: p.ValorAmortizacao,
-                    ValorJuros: p.ValorJuros,
-                    ValorPrestacao: p.ValorPrestacao
-                )).ToList()
-            )).ToList()
-        );
+        var response = result.Adapt<SimulacaoResponse>();
+        
         return Ok(response);
     }
     

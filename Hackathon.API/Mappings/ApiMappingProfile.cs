@@ -28,7 +28,9 @@ public static class ApiMappingProfile
         // Result to Response mappings
         TypeAdapterConfig<SimulacaoResult, SimulacaoResponse>
             .NewConfig()
-            .Map(dest => dest.IdSimulacao, src => src.Id);
+            .Map(dest => dest.IdSimulacao, src => src.Id)
+            .Map(dest => dest.ResultadoSimulacao, src => src.Resultados);
+        
 
         TypeAdapterConfig<ResultadoCalculoAmortizacao, ResultadoSimulacaoResponse>
             .NewConfig()

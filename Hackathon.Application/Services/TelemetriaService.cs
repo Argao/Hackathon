@@ -34,8 +34,6 @@ public class TelemetriaService : ITelemetriaService
         long tempoResposta, 
         bool sucesso, 
         int statusCode, 
-        string? ipCliente = null, 
-        string? userAgent = null, 
         CancellationToken cancellationToken = default)
     {
         // Validação rápida dos parâmetros obrigatórios
