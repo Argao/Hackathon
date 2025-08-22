@@ -1,5 +1,6 @@
 using Hackathon.Application.DTOs.Responses;
 using Hackathon.Application.Interfaces;
+using Hackathon.Domain.Exceptions;
 using Hackathon.Domain.Entities;
 using Hackathon.Domain.Interfaces.Repositories;
 using Hackathon.Domain.ValueObjects;
@@ -33,8 +34,6 @@ public class TelemetriaService : ITelemetriaService
         long tempoResposta, 
         bool sucesso, 
         int statusCode, 
-        string? ipCliente = null, 
-        string? userAgent = null, 
         CancellationToken cancellationToken = default)
     {
         // Validação rápida dos parâmetros obrigatórios
@@ -82,7 +81,7 @@ public class TelemetriaService : ITelemetriaService
     /// <summary>
     /// Obtém telemetria agregada por data com tratamento de erros
     /// </summary>
-    public async Task<Result<TelemetriaFinalResponseDTO>> ObterTelemetriaPorDataAsync(
+    public async Task<TelemetriaFinalResponseDTO> ObterTelemetriaPorDataAsync(
         DateOnly dataReferencia, 
         CancellationToken cancellationToken = default)
     {
@@ -121,17 +120,17 @@ public class TelemetriaService : ITelemetriaService
             _logger.LogInformation("Telemetria consultada com sucesso: {QtdApis} APIs, {TotalRequisicoes} requisições",
                 telemetriasPorApi.Count, telemetriasPorApi.Sum(x => x.QtdRequisicoes));
 
-            return Result<TelemetriaFinalResponseDTO>.Success(response);
+            return response;
         }
         catch (OperationCanceledException)
         {
             _logger.LogWarning("Consulta de telemetria cancelada para data: {DataReferencia}", dataReferencia);
-            return Result<TelemetriaFinalResponseDTO>.Failure("Operação cancelada");
+            throw new SimulacaoException("Operação cancelada");
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Erro ao consultar telemetria para data: {DataReferencia}", dataReferencia);
-            return Result<TelemetriaFinalResponseDTO>.Failure($"Erro interno: {ex.Message}");
+            throw new SimulacaoException($"Erro interno: {ex.Message}", ex);
         }
     }
 }

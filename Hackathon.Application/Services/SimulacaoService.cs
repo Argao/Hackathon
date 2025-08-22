@@ -1,6 +1,7 @@
 using FluentValidation;
 using Hackathon.Application.Commands;
 using Hackathon.Application.Interfaces;
+using Hackathon.Domain.Exceptions;
 using Hackathon.Application.Queries;
 using Hackathon.Application.Results;
 using Hackathon.Domain.Entities;
@@ -28,7 +29,7 @@ public class SimulacaoService : ISimulacaoService
 
     public SimulacaoService(
         ICachedProdutoService cachedProdutoService,
-        ISimulacaoRepository simulacaoRepository, 
+        ISimulacaoRepository simulacaoRepository,
         IEnumerable<ICalculadoraAmortizacao> calculadoras,
         IValidator<RealizarSimulacaoCommand> simulacaoValidator,
         IValidator<ListarSimulacoesQuery> listarValidator,
@@ -49,17 +50,18 @@ public class SimulacaoService : ISimulacaoService
     /// <summary>
     /// Executa uma simulação de crédito
     /// </summary>
-    public async Task<Result<SimulacaoResult>> RealizarSimulacaoAsync(RealizarSimulacaoCommand command, CancellationToken ct)
+    public async Task<SimulacaoResult> RealizarSimulacaoAsync(RealizarSimulacaoCommand command, CancellationToken ct)
     {
         // Validação do comando
         var validationResult = await _simulacaoValidator.ValidateAsync(command, ct);
         if (!validationResult.IsValid)
-            return Result<SimulacaoResult>.Failure(string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage)));
+            throw new Hackathon.Domain.Exceptions.ValidationException(
+                validationResult.Errors.Select(e => e.ErrorMessage));
 
         // Validação com Value Objects
         var valueObjectsResult = command.ToValueObjects();
         if (!valueObjectsResult.IsSuccess)
-            return Result<SimulacaoResult>.Failure(valueObjectsResult.Error);
+            throw new Hackathon.Domain.Exceptions.ValidationException(valueObjectsResult.Error);
 
         var (valorEmprestimo, prazoMeses) = valueObjectsResult.Value;
 
@@ -67,7 +69,7 @@ public class SimulacaoService : ISimulacaoService
         var valorMonetario = ValorMonetario.Create(valorEmprestimo.Valor).Value;
         var produto = await _cachedProdutoService.GetProdutoAdequadoAsync(valorMonetario, prazoMeses, ct);
         if (produto is null)
-            return Result<SimulacaoResult>.Failure(
+            throw new SimulacaoException(
                 $"Nenhum produto disponível para valor {valorEmprestimo} e prazo {prazoMeses}");
 
         // Criar simulação simples
@@ -77,77 +79,74 @@ public class SimulacaoService : ISimulacaoService
         var resultados = _calculadoras
             .Select(c => c.Calcular(valorMonetario, produto.TaxaMensal, prazoMeses))
             .ToList();
-        
+
         simulacao.Resultados = resultados;
 
         // Mapear resultado direto dos cálculos antes de persistir
         var result = new SimulacaoResult(
             Id: simulacao.IdSimulacao,
-            CodigoProduto: simulacao.CodigoProduto,
-            DescricaoProduto: simulacao.DescricaoProduto,
-            TaxaJuros: simulacao.TaxaJuros,
+            CodigoProduto: produto.Codigo,
+            DescricaoProduto: produto.Descricao,
+            TaxaJuros: produto.TaxaMensal,
             Resultados: resultados.Select(r => new ResultadoCalculoAmortizacao(
                 TipoAmortizacao: r.Tipo.ToString(),
-                Parcelas: r.Parcelas.Select(p => new ParcelaCalculada(
+                Parcelas: r.Parcelas?.Select(p => new ParcelaCalculada(
                     Numero: p.Numero,
-                    ValorAmortizacao: p.ValorAmortizacao,
-                    ValorJuros: p.ValorJuros,
-                    ValorPrestacao: p.ValorPrestacao
-                )).ToList()
+                    ValorAmortizacao: p.ValorAmortizacao.Valor,
+                    ValorJuros: p.ValorJuros.Valor,
+                    ValorPrestacao: p.ValorPrestacao.Valor
+                )).ToList() ?? new List<ParcelaCalculada>()
             )).ToList()
         );
 
-        // Log informativo sobre o início do processamento
-        _logger.LogInformation("💾 Iniciando persistência da simulação ID: {SimulacaoId}", result.Id);
-        _logger.LogInformation("📡 Iniciando envio da simulação para EventHub - ID: {SimulacaoId}", result.Id);
-
-        // 🚀 OTIMIZAÇÃO ULTRA AGRESSIVA: EventHub em background, persistência prioritária
-        _logger.LogDebug("⚡ ESTRATÉGIA: Persistir primeiro, EventHub depois");
-        var persistirStart = DateTime.UtcNow;
-        
-        // ESTRATÉGIA: Persistir PRIMEIRO (crítico para API response)
         try
         {
-            await _simulacaoRepository.AdicionarAsync(simulacao, ct);
-            var persistirDuration = DateTime.UtcNow - persistirStart;
-            _logger.LogDebug("✅ Persistência concluída em {Duration}ms", persistirDuration.TotalMilliseconds);
-            
-            // EventHub em BACKGROUND - não impacta tempo de resposta
-            _ = Task.Run(async () =>
+            var persistirStart = DateTime.UtcNow;
+
+            // Inicia a tarefa de persistência
+            var persistirTask = _simulacaoRepository.AdicionarAsync(simulacao, ct);
+
+            // Usa ThreadPool para processar em background sem overhead de Task.Run
+            ThreadPool.QueueUserWorkItem(_ =>
             {
                 try
                 {
-                    await _eventHubService.EnviarSimulacaoAsync(result, CancellationToken.None);
-                    _logger.LogInformation("✅ EventHub enviado com sucesso (background) - ID: {SimulacaoId}", result.Id);
+                    _eventHubService.EnviarSimulacao(result);
+                    _logger.LogInformation("✅ EventHub enviado com sucesso - ID: {SimulacaoId}", result.Id);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "⚠️ EventHub falhou (background), mas simulação foi persistida - ID: {SimulacaoId}", result.Id);
+                    _logger.LogWarning(ex, "⚠️ EventHub falhou em background - ID: {SimulacaoId}", result.Id);
                 }
-            }, CancellationToken.None);
-            
-            _logger.LogInformation("🚀 Simulação processada - ID: {SimulacaoId} (Persistência ✅, EventHub em background)", result.Id);
+            }, null);
+
+            // Aguarda apenas a persistência (crítica)
+            await persistirTask;
+
+            var totalDuration = DateTime.UtcNow - persistirStart;
+            _logger.LogInformation("✅ Persistência concluída em {Duration}ms - ID: {SimulacaoId}",
+                totalDuration.TotalMilliseconds, result.Id);
         }
-        catch (Exception persistenciaException)
+        catch (Exception ex)
         {
-            // PERSISTÊNCIA É CRÍTICA - se falha, toda operação falha
-            _logger.LogError(persistenciaException, "🚨 FALHA CRÍTICA na persistência - ID: {SimulacaoId}", result.Id);
+            _logger.LogError(ex, "🚨 FALHA CRÍTICA na persistência - ID: {SimulacaoId}", result.Id);
             throw;
         }
 
-        return Result<SimulacaoResult>.Success(result);
+        return result;
     }
 
     /// <summary>
     /// Lista simulações de forma paginada
     /// </summary>
-    public async Task<Result<PagedResult<SimulacaoResumoResult>>> ListarSimulacoesAsync(ListarSimulacoesQuery query, CancellationToken ct)
+    public async Task<PagedResult<SimulacaoResumoResult>> ListarSimulacoesAsync(ListarSimulacoesQuery query,
+        CancellationToken ct)
     {
         // Validação da query
         var validationResult = await _listarValidator.ValidateAsync(query, ct);
         if (!validationResult.IsValid)
-            return Result<PagedResult<SimulacaoResumoResult>>.Failure(
-                string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage)));
+            throw new Hackathon.Domain.Exceptions.ValidationException(
+                validationResult.Errors.Select(e => e.ErrorMessage));
 
         var pageNumber = query.GetValidPageNumber();
         var pageSize = query.GetValidPageSize();
@@ -157,9 +156,9 @@ public class SimulacaoService : ISimulacaoService
 
         var resumos = simulacoes.Select(s => new SimulacaoResumoResult(
             Id: s.IdSimulacao,
-            ValorDesejado: s.ValorDesejado,
+            ValorDesejado: s.ValorDesejado.Valor,
             Prazo: s.PrazoMeses,
-            ValorTotalParcelas: s.Resultados.SelectMany(r => r.Parcelas).Sum(p => p.ValorPrestacao)
+            ValorTotalParcelas: s.Resultados.SelectMany(r => r.Parcelas ?? Enumerable.Empty<Parcela>()).Sum(p => p.ValorPrestacao.Valor)
         )).ToList();
 
         var result = new PagedResult<SimulacaoResumoResult>(
@@ -169,29 +168,30 @@ public class SimulacaoService : ISimulacaoService
             PageSize: pageSize
         );
 
-        return Result<PagedResult<SimulacaoResumoResult>>.Success(result);
+        return result;
     }
 
     /// <summary>
     /// Obtém volume simulado por data
     /// </summary>
-    public async Task<Result<VolumeSimuladoResult>> ObterVolumeSimuladoAsync(ObterVolumeSimuladoQuery query, CancellationToken ct)
+    public async Task<VolumeSimuladoResult> ObterVolumeSimuladoAsync(ObterVolumeSimuladoQuery query,
+        CancellationToken ct)
     {
         // Validação da query
         var validationResult = await _volumeValidator.ValidateAsync(query, ct);
         if (!validationResult.IsValid)
-            return Result<VolumeSimuladoResult>.Failure(
-                string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage)));
+            throw new Hackathon.Domain.Exceptions.ValidationException(
+                validationResult.Errors.Select(e => e.ErrorMessage));
 
         var dadosAgregados = await _simulacaoRepository.ObterVolumeSimuladoPorProdutoAsync(query.DataReferencia, ct);
-        
+
         var produtos = dadosAgregados.Adapt<List<VolumeSimuladoProdutoResult>>();
-        
+
         var result = new VolumeSimuladoResult(
             DataReferencia: query.DataReferencia,
             Produtos: produtos
         );
 
-        return Result<VolumeSimuladoResult>.Success(result);
+        return result;
     }
 }

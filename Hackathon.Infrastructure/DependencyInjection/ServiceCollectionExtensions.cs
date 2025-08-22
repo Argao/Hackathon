@@ -1,6 +1,8 @@
 using FluentValidation;
+using Hackathon.Application.Commands;
 using Hackathon.Application.Interfaces;
 using Hackathon.Application.Mappings;
+using Hackathon.Application.Queries;
 using Hackathon.Application.Services;
 using Hackathon.Application.Validators;
 using Microsoft.Extensions.Logging;
@@ -86,6 +88,15 @@ public static class ServiceCollectionExtensions
 
         // EventHub Service - Singleton para reutilizar connection pool
         services.AddSingleton<IEventHubService, EventHubService>();
+        
+        
+        // FluentValidation - OTIMIZAÇÃO: Cache de validators
+        services.AddValidatorsFromAssemblyContaining<RealizarSimulacaoCommandValidator>();
+
+        
+        services.AddSingleton<IValidator<RealizarSimulacaoCommand>, RealizarSimulacaoCommandValidator>();
+        services.AddSingleton<IValidator<ListarSimulacoesQuery>, ListarSimulacoesQueryValidator>();
+        services.AddSingleton<IValidator<ObterVolumeSimuladoQuery>, ObterVolumeSimuladoQueryValidator>();
 
         // Cache simples para produtos
         services.AddMemoryCache(options =>

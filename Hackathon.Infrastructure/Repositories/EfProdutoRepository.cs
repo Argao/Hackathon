@@ -20,13 +20,9 @@ public class EfProdutoRepository : IProdutoRepository
         _logger = logger;
     }
 
-    // ✅ REMOVIDOS: GetProdutoAdequadoAsync e GetByIdAsync
-    // Motivo: Filtro é feito em memória pelo CachedProdutoService
-    // Performance: 1 query para todos vs N queries específicas
 
     public async Task<IEnumerable<Produto>?> GetAllAsync(CancellationToken ct = default)
     {
-        _logger.LogDebug("🎯 OTIMIZADO: Buscando TODOS os produtos de uma vez (apenas 4)");
         
         // PERFORMANCE: AsNoTracking pois são dados read-only
         return await _context.Produtos

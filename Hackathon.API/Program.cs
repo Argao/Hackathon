@@ -2,6 +2,7 @@ using System.Data;
 using Hackathon.API.Mappings;
 using Hackathon.API.Middleware;
 using Hackathon.Infrastructure.DependencyInjection;
+using Mapster;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
@@ -23,6 +24,8 @@ builder.Services.AddInfrastructure(builder.Configuration);
 // Configure API Mappings
 ApiMappingProfile.Configure();
 
+TypeAdapterConfig.GlobalSettings.Compile();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -36,6 +39,9 @@ app.UseHttpsRedirection();
 
 // 🔥 Middleware de telemetria ANTES do roteamento para capturar todas as requisições
 app.UseMiddleware<TelemetriaMiddleware>();
+
+// 🛡️ Global Exception Handler
+app.UseMiddleware<GlobalExceptionHandler>();
 
 app.UseAuthorization();
 

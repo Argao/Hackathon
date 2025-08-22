@@ -10,10 +10,9 @@ public class SimulacaoRepository(AppDbContext context) : ISimulacaoRepository
 {
     public async Task<Simulacao> AdicionarAsync(Simulacao simulacao, CancellationToken ct)
     {
-        // OTIMIZAÇÃO: Usar Add (não AddAsync) para melhor performance em batch
         context.Simulacoes.Add(simulacao);
         
-        // PERFORMANCE: Uma única chamada SaveChanges para toda a simulação + resultados + parcelas
+
         await context.SaveChangesAsync(ct);
         return simulacao;
     }
@@ -22,7 +21,7 @@ public class SimulacaoRepository(AppDbContext context) : ISimulacaoRepository
     {
         var query = context.Simulacoes
             .Include(s => s.Resultados) // Carrega os resultados relacionados
-            .AsQueryable();
+            .AsQueryable().AsNoTracking();
         
         // Contagem total para paginação
         var totalRecords = await query.CountAsync(ct);

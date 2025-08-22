@@ -14,6 +14,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     // IMPORTANTE: Produto NÃO está aqui - é entidade read-only do SQL Server externo
 
 
+    private static readonly Func<AppDbContext, CancellationToken, Task<int>> _countSimulacoesQuery =
+        EF.CompileAsyncQuery((AppDbContext context, CancellationToken ct) => 
+            context.Simulacoes.Count());
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
