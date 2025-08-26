@@ -15,11 +15,6 @@ public interface ISimulacaoService
     Task<SimulacaoResult> RealizarSimulacaoAsync(RealizarSimulacaoCommand command, CancellationToken ct);
 
     /// <summary>
-    /// Lista simulações de forma paginada
-    /// </summary>
-    Task<PagedResult<SimulacaoResumoResult>> ListarSimulacoesAsync(ListarSimulacoesQuery query, CancellationToken ct);
-
-    /// <summary>
     /// Obtém volume simulado por data
     /// </summary>
     Task<VolumeSimuladoResult> ObterVolumeSimuladoAsync(ObterVolumeSimuladoQuery query, CancellationToken ct);

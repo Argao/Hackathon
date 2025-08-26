@@ -1,4 +1,3 @@
-using Hackathon.Application.Interfaces;
 using Hackathon.Application.Queries;
 using Hackathon.Application.Results;
 using Hackathon.Domain.Interfaces.Repositories;
@@ -7,18 +6,16 @@ using MediatR;
 namespace Hackathon.Application.Handlers;
 
 /// <summary>
-/// Handler para listagem de simulações
-/// SRP: Apenas coordena consulta e mapeamento
+/// Handler para listagem de simulações - OTIMIZADO
+/// SRP: Coordena consulta otimizada e mapeamento direto
 /// </summary>
 public class ListarSimulacoesHandler : IRequestHandler<ListarSimulacoesQuery, PagedResult<SimulacaoResumoResult>>
 {
     private readonly ISimulacaoRepository _repository;
-    private readonly IMapper _mapper;
 
-    public ListarSimulacoesHandler(ISimulacaoRepository repository, IMapper mapper)
+    public ListarSimulacoesHandler(ISimulacaoRepository repository)
     {
         _repository = repository;
-        _mapper = mapper;
     }
 
     public async Task<PagedResult<SimulacaoResumoResult>> Handle(ListarSimulacoesQuery request, CancellationToken cancellationToken)
@@ -26,13 +23,22 @@ public class ListarSimulacoesHandler : IRequestHandler<ListarSimulacoesQuery, Pa
         var pageNumber = request.GetValidPageNumber();
         var pageSize = request.GetValidPageSize();
 
-        var totalItems = await _repository.ObterTotalSimulacoesAsync(cancellationToken);
-        var simulacoes = await _repository.ListarSimulacoesAsync(pageNumber, pageSize, cancellationToken);
+        // OTIMIZAÇÃO: Executar contagem e busca em paralelo
+        var totalItemsTask = _repository.ObterTotalSimulacoesAsync(cancellationToken);
+        var simulacoesTask = _repository.ListarSimulacoesOtimizadoAsync(pageNumber, pageSize, cancellationToken);
 
-        // Usar mapper genérico com configuração customizada para lógica complexa
-        var resumos = _mapper.MapCollection<Domain.Entities.Simulacao, SimulacaoResumoResult>(
-            simulacoes.ToList()
-        ).ToList();
+        await Task.WhenAll(totalItemsTask, simulacoesTask);
+
+        var totalItems = await totalItemsTask;
+        var simulacoes = await simulacoesTask;
+
+        // OTIMIZAÇÃO: Mapeamento direto do DTO para Result
+        var resumos = simulacoes.Select(s => new SimulacaoResumoResult(
+            Id: s.Id,
+            ValorDesejado: s.ValorDesejado,
+            Prazo: s.Prazo,
+            ValorTotalParcelas: s.ValorTotalParcelas
+        )).ToList();
 
         return new PagedResult<SimulacaoResumoResult>(
             Items: resumos,

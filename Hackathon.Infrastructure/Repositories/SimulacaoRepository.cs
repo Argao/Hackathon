@@ -17,28 +17,6 @@ public class SimulacaoRepository(AppDbContext context) : ISimulacaoRepository
         return simulacao;
     }
 
-    public async Task<(IEnumerable<Simulacao> Data, int TotalRecords)> ListarPaginadoAsync(int pageNumber, int pageSize, CancellationToken ct)
-    {
-        var query = context.Simulacoes
-            .Include(s => s.Resultados) // Carrega os resultados relacionados
-            .AsQueryable().AsNoTracking();
-        
-        // Contagem total para paginação
-        var totalRecords = await query.CountAsync(ct);
-        
-        // Ordenação para consistência na paginação
-        query = query.OrderByDescending(s => s.DataReferencia)
-            .ThenByDescending(s => s.IdSimulacao);
-
-        // Aplicar paginação
-        var data = await query
-            .Skip((pageNumber - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync(ct);
-
-        return (data, totalRecords);
-    }
-
     public async Task<IEnumerable<VolumeSimuladoAgregado>> ObterVolumeSimuladoPorProdutoAsync(DateOnly dataReferencia, CancellationToken ct)
     {
         // Primeiro, buscar as simulações do banco
@@ -73,18 +51,6 @@ public class SimulacaoRepository(AppDbContext context) : ISimulacaoRepository
     public async Task<int> ObterTotalSimulacoesAsync(CancellationToken ct)
     {
         return await context.Simulacoes.CountAsync(ct);
-    }
-
-    public async Task<IEnumerable<Simulacao>> ListarSimulacoesAsync(int pageNumber, int pageSize, CancellationToken ct)
-    {
-        return await context.Simulacoes
-            .Include(s => s.Resultados)
-                .ThenInclude(r => r.Parcelas)
-            .OrderByDescending(s => s.DataReferencia)
-                .ThenByDescending(s => s.IdSimulacao)
-            .Skip((pageNumber - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync(ct);
     }
 
     // OTIMIZAÇÃO: Método com projeção específica - evita carregar parcelas desnecessárias

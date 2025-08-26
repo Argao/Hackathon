@@ -22,7 +22,6 @@ public class SimulacaoService : ISimulacaoService
     private readonly ICachedProdutoService _cachedProdutoService;
     private readonly IEnumerable<ICalculadoraAmortizacao> _calculadoras;
     private readonly IValidator<RealizarSimulacaoCommand> _simulacaoValidator;
-    private readonly IValidator<ListarSimulacoesQuery> _listarValidator;
     private readonly IValidator<ObterVolumeSimuladoQuery> _volumeValidator;
     private readonly IEventHubService _eventHubService;
     private readonly ILogger<SimulacaoService> _logger;
@@ -32,7 +31,6 @@ public class SimulacaoService : ISimulacaoService
         ISimulacaoRepository simulacaoRepository,
         IEnumerable<ICalculadoraAmortizacao> calculadoras,
         IValidator<RealizarSimulacaoCommand> simulacaoValidator,
-        IValidator<ListarSimulacoesQuery> listarValidator,
         IValidator<ObterVolumeSimuladoQuery> volumeValidator,
         IEventHubService eventHubService,
         ILogger<SimulacaoService> logger)
@@ -41,7 +39,6 @@ public class SimulacaoService : ISimulacaoService
         _simulacaoRepository = simulacaoRepository;
         _calculadoras = calculadoras;
         _simulacaoValidator = simulacaoValidator;
-        _listarValidator = listarValidator;
         _volumeValidator = volumeValidator;
         _eventHubService = eventHubService;
         _logger = logger;
@@ -134,48 +131,6 @@ public class SimulacaoService : ISimulacaoService
             _logger.LogError(ex, "🚨 FALHA CRÍTICA na persistência - ID: {SimulacaoId}", result.Id);
             throw;
         }
-
-        return result;
-    }
-
-    /// <summary>
-    /// Lista simulações de forma paginada - OTIMIZADO
-    /// </summary>
-    public async Task<PagedResult<SimulacaoResumoResult>> ListarSimulacoesAsync(ListarSimulacoesQuery query,
-        CancellationToken ct)
-    {
-        // Validação da query
-        var validationResult = await _listarValidator.ValidateAsync(query, ct);
-        if (!validationResult.IsValid)
-            throw new Hackathon.Domain.Exceptions.ValidationException(
-                validationResult.Errors.Select(e => e.ErrorMessage));
-
-        var pageNumber = query.GetValidPageNumber();
-        var pageSize = query.GetValidPageSize();
-
-        // OTIMIZAÇÃO: Executar contagem e busca em paralelo
-        var totalItemsTask = _simulacaoRepository.ObterTotalSimulacoesAsync(ct);
-        var simulacoesTask = _simulacaoRepository.ListarSimulacoesOtimizadoAsync(pageNumber, pageSize, ct);
-
-        await Task.WhenAll(totalItemsTask, simulacoesTask);
-
-        var totalItems = await totalItemsTask;
-        var simulacoes = await simulacoesTask;
-
-        // OTIMIZAÇÃO: Mapeamento direto do DTO para Result
-        var resumos = simulacoes.Select(s => new SimulacaoResumoResult(
-            Id: s.Id,
-            ValorDesejado: s.ValorDesejado,
-            Prazo: s.Prazo,
-            ValorTotalParcelas: s.ValorTotalParcelas
-        )).ToList();
-
-        var result = new PagedResult<SimulacaoResumoResult>(
-            Items: resumos,
-            TotalItems: totalItems,
-            CurrentPage: pageNumber,
-            PageSize: pageSize
-        );
 
         return result;
     }
