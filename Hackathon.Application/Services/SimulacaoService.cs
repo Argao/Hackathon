@@ -139,7 +139,7 @@ public class SimulacaoService : ISimulacaoService
     }
 
     /// <summary>
-    /// Lista simulações de forma paginada
+    /// Lista simulações de forma paginada - OTIMIZADO
     /// </summary>
     public async Task<PagedResult<SimulacaoResumoResult>> ListarSimulacoesAsync(ListarSimulacoesQuery query,
         CancellationToken ct)
@@ -153,14 +153,21 @@ public class SimulacaoService : ISimulacaoService
         var pageNumber = query.GetValidPageNumber();
         var pageSize = query.GetValidPageSize();
 
-        var totalItems = await _simulacaoRepository.ObterTotalSimulacoesAsync(ct);
-        var simulacoes = await _simulacaoRepository.ListarSimulacoesAsync(pageNumber, pageSize, ct);
+        // OTIMIZAÇÃO: Executar contagem e busca em paralelo
+        var totalItemsTask = _simulacaoRepository.ObterTotalSimulacoesAsync(ct);
+        var simulacoesTask = _simulacaoRepository.ListarSimulacoesOtimizadoAsync(pageNumber, pageSize, ct);
 
+        await Task.WhenAll(totalItemsTask, simulacoesTask);
+
+        var totalItems = await totalItemsTask;
+        var simulacoes = await simulacoesTask;
+
+        // OTIMIZAÇÃO: Mapeamento direto do DTO para Result
         var resumos = simulacoes.Select(s => new SimulacaoResumoResult(
-            Id: s.IdSimulacao,
-            ValorDesejado: s.ValorDesejado.Valor,
-            Prazo: s.PrazoMeses,
-            ValorTotalParcelas: s.Resultados.SelectMany(r => r.Parcelas ?? Enumerable.Empty<Parcela>()).Sum(p => p.ValorPrestacao.Valor)
+            Id: s.Id,
+            ValorDesejado: s.ValorDesejado,
+            Prazo: s.Prazo,
+            ValorTotalParcelas: s.ValorTotalParcelas
         )).ToList();
 
         var result = new PagedResult<SimulacaoResumoResult>(

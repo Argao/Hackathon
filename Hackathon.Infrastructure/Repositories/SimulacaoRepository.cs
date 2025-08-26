@@ -86,4 +86,24 @@ public class SimulacaoRepository(AppDbContext context) : ISimulacaoRepository
             .Take(pageSize)
             .ToListAsync(ct);
     }
+
+    // OTIMIZAÇÃO: Método com projeção específica - evita carregar parcelas desnecessárias
+    public async Task<IEnumerable<SimulacaoResumoDto>> ListarSimulacoesOtimizadoAsync(int pageNumber, int pageSize, CancellationToken ct)
+    {
+        // Projeção direta no banco - sem carregar parcelas
+        var query = context.Simulacoes
+            .Include(s => s.Resultados) // Apenas resultados, sem parcelas
+            .Select(s => new SimulacaoResumoDto(
+                s.IdSimulacao,
+                s.ValorDesejado.Valor,
+                s.PrazoMeses,
+                s.Resultados.Sum(r => r.ValorTotal.Valor) // Usa ValorTotal já calculado
+            ))
+            .OrderByDescending(s => s.Id)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .AsNoTracking();
+
+        return await query.ToListAsync(ct);
+    }
 }

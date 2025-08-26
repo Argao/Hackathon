@@ -18,7 +18,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.HasDefaultSchema("main");
+        // Removido: modelBuilder.HasDefaultSchema("main"); - SQLite não suporta schemas
         
         ConfigureValueObjectConversions(modelBuilder);
 
@@ -34,6 +34,13 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             
             entity.HasIndex(e => e.DataReferencia)
                 .HasDatabaseName("IX_SIMULACAO_DT_REFERENCIA");
+            
+            // OTIMIZAÇÃO: Índices compostos para consultas de paginação
+            entity.HasIndex(e => new { e.DataReferencia, e.IdSimulacao })
+                .HasDatabaseName("IX_SIMULACAO_DATA_ID_COMPOSTO");
+            
+            entity.HasIndex(e => new { e.CodigoProduto, e.DataReferencia })
+                .HasDatabaseName("IX_SIMULACAO_PRODUTO_DATA");
             
             entity.Property(e => e.IdSimulacao)
                 .HasColumnName("ID_SIMULACAO")
