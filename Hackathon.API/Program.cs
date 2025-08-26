@@ -6,7 +6,6 @@ using Hackathon.Application.DependencyInjection;
 using Hackathon.Infrastructure.DependencyInjection;
 using Hackathon.Infrastructure.Services;
 using Mapster;
-using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 
