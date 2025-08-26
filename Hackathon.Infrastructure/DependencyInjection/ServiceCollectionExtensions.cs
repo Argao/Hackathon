@@ -1,10 +1,5 @@
-using FluentValidation;
-using Hackathon.Application.Commands;
 using Hackathon.Application.Interfaces;
-using Hackathon.Application.Mappings;
-using Hackathon.Application.Queries;
 using Hackathon.Application.Services;
-using Hackathon.Application.Validators;
 using Microsoft.Extensions.Logging;
 using Hackathon.Domain.Interfaces.Repositories;
 using Hackathon.Domain.Interfaces.Services;
@@ -13,7 +8,6 @@ using Hackathon.Infrastructure.Context;
 using Hackathon.Infrastructure.EventHub;
 using Hackathon.Infrastructure.Repositories;
 using Hackathon.Infrastructure.Services;
-using Mapster;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -90,26 +84,11 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IEventHubService, EventHubService>();
         
         
-        // FluentValidation - OTIMIZAÇÃO: Cache de validators
-        services.AddValidatorsFromAssemblyContaining<RealizarSimulacaoCommandValidator>();
-
-        
-        services.AddSingleton<IValidator<RealizarSimulacaoCommand>, RealizarSimulacaoCommandValidator>();
-        services.AddSingleton<IValidator<ListarSimulacoesQuery>, ListarSimulacoesQueryValidator>();
-        services.AddSingleton<IValidator<ObterVolumeSimuladoQuery>, ObterVolumeSimuladoQueryValidator>();
-
         // Cache simples para produtos
         services.AddMemoryCache(options =>
         {
             options.SizeLimit = 50;
         });
-
-        // Mapster Configuration
-        services.AddMapster();
-        MapsterConfiguration.Configure();
-
-        // FluentValidation
-        services.AddValidatorsFromAssemblyContaining<RealizarSimulacaoCommandValidator>();
 
         // PERFORMANCE: Warm-up service para resolver Cold Start
         services.AddHostedService<WarmupService>();

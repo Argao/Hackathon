@@ -2,6 +2,8 @@ using FluentValidation;
 using Hackathon.Application.Behaviors;
 using Hackathon.Application.Interfaces;
 using Hackathon.Application.Services;
+using Hackathon.Application.Mappings;
+using Mapster;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
@@ -26,11 +28,10 @@ public static class ApplicationServiceCollectionExtensions
         // Behaviors na ordem correta (importante!)
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ExceptionHandlingBehavior<,>));
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
-        services.AddTransient(typeof(IPipelineBehavior<,>), typeof(TelemetriaBehavior<,>));
+        // Removido TelemetriaBehavior - apenas telemetria HTTP via middleware
 
         // Services com responsabilidade única
         services.AddScoped<ISimulacaoOrchestrator, SimulacaoOrchestrator>();
-        services.AddScoped<ITelemetriaOrchestrator, TelemetriaOrchestrator>();
         services.AddScoped<ISimulacaoFactory, SimulacaoFactory>();
         services.AddScoped<ICalculadoraService, CalculadoraService>();
         services.AddScoped<IValidationService, ValidationService>();
@@ -41,6 +42,10 @@ public static class ApplicationServiceCollectionExtensions
 
         // FluentValidation - busca automaticamente todos os validadores no assembly
         services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
+
+        // Mapster Configuration
+        services.AddMapster();
+        MapsterConfiguration.Configure();
 
         return services;
     }

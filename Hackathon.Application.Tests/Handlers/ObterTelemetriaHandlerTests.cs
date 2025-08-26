@@ -1,7 +1,7 @@
 using Hackathon.Application.Handlers;
-using Hackathon.Application.Interfaces;
 using Hackathon.Application.Queries;
 using Hackathon.Application.Results;
+using Hackathon.Domain.Interfaces.Repositories;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -9,13 +9,15 @@ namespace Hackathon.Application.Tests.Handlers;
 
 public class ObterTelemetriaHandlerTests
 {
-    private readonly Mock<ITelemetriaOrchestrator> _mockOrchestrator;
+    private readonly Mock<IMetricaRepository> _mockRepository;
+    private readonly Mock<ILogger<ObterTelemetriaHandler>> _mockLogger;
     private readonly ObterTelemetriaHandler _handler;
 
     public ObterTelemetriaHandlerTests()
     {
-        _mockOrchestrator = new Mock<ITelemetriaOrchestrator>();
-        _handler = new ObterTelemetriaHandler(_mockOrchestrator.Object);
+        _mockRepository = new Mock<IMetricaRepository>();
+        _mockLogger = new Mock<ILogger<ObterTelemetriaHandler>>();
+        _handler = new ObterTelemetriaHandler(_mockRepository.Object, _mockLogger.Object);
     }
 
     [Fact]
@@ -24,51 +26,51 @@ public class ObterTelemetriaHandlerTests
         // Arrange
         var query = new ObterTelemetriaQuery(DateOnly.FromDateTime(DateTime.Today));
         var ct = CancellationToken.None;
+        var dataReferencia = DateOnly.FromDateTime(DateTime.Today);
 
-        var telemetriaResult = new TelemetriaResult(
-            DateOnly.FromDateTime(DateTime.Today),
-            new List<TelemetriaApiResult>
-            {
-                new("Simulacao", 100, 150.5, 50L, 300L, 95.5)
-            }
-        );
+        var metricasAgregadas = new List<MetricaAgregada>
+        {
+            new() { NomeApi = "Simulacao", QtdRequisicoes = 100, TempoMedio = 150.5, TempoMinimo = 50L, TempoMaximo = 300L, PercentualSucesso = 0.955 }
+        };
 
-        _mockOrchestrator
-            .Setup(x => x.ObterTelemetriaAsync(query, ct))
-            .ReturnsAsync(telemetriaResult);
+        _mockRepository
+            .Setup(x => x.ObterMetricasPorDataAsync(dataReferencia, ct))
+            .ReturnsAsync(metricasAgregadas);
 
         // Act
         var result = await _handler.Handle(query, ct);
 
         // Assert
         result.Should().NotBeNull();
-        result.Should().BeEquivalentTo(telemetriaResult);
+        result.DataReferencia.Should().Be(dataReferencia);
+        result.ListaEndpoints.Should().HaveCount(1);
+        result.ListaEndpoints[0].NomeApi.Should().Be("Simulacao");
         
-        _mockOrchestrator.Verify(
-            x => x.ObterTelemetriaAsync(query, ct),
+        _mockRepository.Verify(
+            x => x.ObterMetricasPorDataAsync(dataReferencia, ct),
             Times.Once);
     }
 
     [Fact]
-    public async Task Handle_ComOrchestratorLancandoExcecao_DevePropagarExcecao()
+    public async Task Handle_ComRepositorioRetornandoListaVazia_DeveLancarExcecao()
     {
         // Arrange
         var query = new ObterTelemetriaQuery(DateOnly.FromDateTime(DateTime.Today));
         var ct = CancellationToken.None;
-        var expectedException = new InvalidOperationException("Erro de teste");
+        var dataReferencia = DateOnly.FromDateTime(DateTime.Today);
 
-        _mockOrchestrator
-            .Setup(x => x.ObterTelemetriaAsync(query, ct))
-            .ThrowsAsync(expectedException);
+        _mockRepository
+            .Setup(x => x.ObterMetricasPorDataAsync(dataReferencia, ct))
+            .ReturnsAsync(new List<MetricaAgregada>());
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+        var exception = await Assert.ThrowsAsync<Hackathon.Domain.Exceptions.SimulacaoException>(
             () => _handler.Handle(query, ct));
 
-        exception.Should().Be(expectedException);
+        exception.Message.Should().Contain("Nenhum dado de telemetria encontrado");
         
-        _mockOrchestrator.Verify(
-            x => x.ObterTelemetriaAsync(query, ct),
+        _mockRepository.Verify(
+            x => x.ObterMetricasPorDataAsync(dataReferencia, ct),
             Times.Once);
     }
 }
