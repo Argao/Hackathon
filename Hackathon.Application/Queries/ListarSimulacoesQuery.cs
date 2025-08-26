@@ -1,4 +1,5 @@
 using Hackathon.Application.Results;
+using MediatR;
 
 namespace Hackathon.Application.Queries;
 
@@ -8,7 +9,7 @@ namespace Hackathon.Application.Queries;
 public sealed record ListarSimulacoesQuery(
     int NumeroPagina,
     int TamanhoPagina
-)
+) : IRequest<PagedResult<SimulacaoResumoResult>>
 {
     /// <summary>
     /// Retorna página válida (mínimo 1)

@@ -2,6 +2,7 @@ using System.Data;
 using System.Reflection;
 using Hackathon.API.Mappings;
 using Hackathon.API.Middleware;
+using Hackathon.Application.DependencyInjection;
 using Hackathon.Infrastructure.DependencyInjection;
 using Hackathon.Infrastructure.Services;
 using Mapster;
@@ -70,6 +71,9 @@ builder.Services.AddHealthChecks();
 
 // Configuração da infraestrutura isolada
 builder.Services.AddInfrastructure(builder.Configuration);
+
+// Configuração da camada Application com SOLID
+builder.Services.AddApplicationServices();
 
 // Configure API Mappings
 ApiMappingProfile.Configure();

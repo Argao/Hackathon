@@ -1,9 +1,9 @@
 using Hackathon.API.Contracts.Requests;
 using Hackathon.API.Contracts.Responses;
 using Hackathon.Application.Commands;
-using Hackathon.Application.Interfaces;
 using Hackathon.Application.Queries;
 using Mapster;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Hackathon.API.Controllers;
@@ -21,7 +21,7 @@ namespace Hackathon.API.Controllers;
 [Route("simulacao")]
 [Produces("application/json")]
 [ApiExplorerSettings(GroupName = "Simulação")]
-public class SimulacaoController(ISimulacaoService simulacaoService) : ControllerBase
+public class SimulacaoController(IMediator mediator) : ControllerBase
 {
     /// <summary>
     /// Realiza uma simulação de crédito com sistemas SAC e PRICE
@@ -63,7 +63,7 @@ public class SimulacaoController(ISimulacaoService simulacaoService) : Controlle
         CancellationToken ct)
     {
         var command = request.Adapt<RealizarSimulacaoCommand>();
-        var result = await simulacaoService.RealizarSimulacaoAsync(command, ct);
+        var result = await mediator.Send(command, ct);
         
         var response = result.Adapt<SimulacaoResponse>();
         
@@ -95,13 +95,8 @@ public class SimulacaoController(ISimulacaoService simulacaoService) : Controlle
         [FromQuery] ListarSimulacoesRequest request, 
         CancellationToken ct)
     {
-        // Mapear request para query
         var query = request.Adapt<ListarSimulacoesQuery>();
-        
-        // Executar listagem
-        var result = await simulacaoService.ListarSimulacoesAsync(query, ct);
-        
-        // Mapear resultado para response
+        var result = await mediator.Send(query, ct);
         var response = result.Adapt<ListarSimulacoesResponse>();
         return Ok(response);
     }
@@ -142,13 +137,8 @@ public class SimulacaoController(ISimulacaoService simulacaoService) : Controlle
         [FromQuery] DateOnly dataReferencia, 
         CancellationToken ct)
     {
-        // Criar query
         var query = new ObterVolumeSimuladoQuery(dataReferencia);
-        
-        // Executar consulta
-        var result = await simulacaoService.ObterVolumeSimuladoAsync(query, ct);
-        
-        // Mapear resultado para response
+        var result = await mediator.Send(query, ct);
         var response = result.Adapt<VolumeSimuladoResponse>();
         return Ok(response);
     }
