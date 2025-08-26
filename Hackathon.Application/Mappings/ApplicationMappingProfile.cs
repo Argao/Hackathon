@@ -47,5 +47,15 @@ public static class ApplicationMappingProfile
             .Map(dest => dest.ValorAmortizacao, src => src.ValorAmortizacao.Valor)
             .Map(dest => dest.ValorJuros, src => src.ValorJuros.Valor)
             .Map(dest => dest.ValorPrestacao, src => src.ValorPrestacao.Valor);
+
+        // Adicionar mapeamento para SimulacaoResumoResult
+        TypeAdapterConfig<Simulacao, SimulacaoResumoResult>
+            .NewConfig()
+            .Map(dest => dest.Id, src => src.IdSimulacao)
+            .Map(dest => dest.ValorDesejado, src => src.ValorDesejado.Valor)
+            .Map(dest => dest.Prazo, src => (int)src.PrazoMeses)
+            .Map(dest => dest.ValorTotalParcelas, src => 
+                src.Resultados.SelectMany(r => r.Parcelas ?? Enumerable.Empty<Parcela>())
+                    .Sum(p => p.ValorPrestacao.Valor));
     }
 }
