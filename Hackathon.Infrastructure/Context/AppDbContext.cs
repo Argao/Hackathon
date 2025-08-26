@@ -66,6 +66,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             
             entity.Property(e => e.PrazoMeses)
                 .HasColumnName("NU_PRAZO_MESES")
+                .HasConversion(
+                    v => v.Meses,
+                    v => PrazoMeses.Create(v).Value)
                 .IsRequired();
             
             entity.Property(e => e.DataReferencia)

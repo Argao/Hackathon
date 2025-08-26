@@ -3,6 +3,7 @@ using AutoFixture.Xunit2;
 using FluentAssertions;
 using Hackathon.Domain.Entities;
 using Hackathon.Domain.ValueObjects;
+using Hackathon.Domain.Exceptions;
 using Xunit;
 
 namespace Hackathon.Domain.Tests.Entities;
@@ -17,11 +18,19 @@ public class SimulacaoTests
     }
 
     [Fact]
-    public void Construtor_DeveCriarSimulacaoComIdUnico()
+    public void Create_ComDadosValidos_DeveCriarSimulacaoComIdUnico()
     {
+        // Arrange
+        var codigoProduto = 123;
+        var descricaoProduto = "Empréstimo Pessoal";
+        var taxaJuros = TaxaJuros.Create(0.015m).Value;
+        var valorDesejado = ValorMonetario.Create(10000.00m).Value;
+        var prazoMeses = PrazoMeses.Create(24).Value;
+        var dataReferencia = DateOnly.FromDateTime(DateTime.Today);
+
         // Act
-        var simulacao1 = new Simulacao();
-        var simulacao2 = new Simulacao();
+        var simulacao1 = Simulacao.Create(codigoProduto, descricaoProduto, taxaJuros, valorDesejado, prazoMeses, dataReferencia);
+        var simulacao2 = Simulacao.Create(codigoProduto, descricaoProduto, taxaJuros, valorDesejado, prazoMeses, dataReferencia);
 
         // Assert
         simulacao1.IdSimulacao.Should().NotBeEmpty();
@@ -30,26 +39,18 @@ public class SimulacaoTests
     }
 
     [Fact]
-    public void Propriedades_DevePermitirDefinirElerValores()
+    public void Create_ComDadosValidos_DeveCriarSimulacaoComPropriedadesCorretas()
     {
         // Arrange
-        var simulacao = new Simulacao();
         var codigoProduto = 123;
         var descricaoProduto = "Empréstimo Pessoal";
         var taxaJuros = TaxaJuros.Create(0.015m).Value;
         var valorDesejado = ValorMonetario.Create(10000.00m).Value;
-        var prazoMeses = (short)24;
+        var prazoMeses = PrazoMeses.Create(24).Value;
         var dataReferencia = DateOnly.FromDateTime(DateTime.Today);
-        var envelopJson = "{\"teste\": \"valor\"}";
 
         // Act
-        simulacao.CodigoProduto = codigoProduto;
-        simulacao.DescricaoProduto = descricaoProduto;
-        simulacao.TaxaJuros = taxaJuros;
-        simulacao.ValorDesejado = valorDesejado;
-        simulacao.PrazoMeses = prazoMeses;
-        simulacao.DataReferencia = dataReferencia;
-        simulacao.EnvelopJson = envelopJson;
+        var simulacao = Simulacao.Create(codigoProduto, descricaoProduto, taxaJuros, valorDesejado, prazoMeses, dataReferencia);
 
         // Assert
         simulacao.CodigoProduto.Should().Be(codigoProduto);
@@ -58,14 +59,47 @@ public class SimulacaoTests
         simulacao.ValorDesejado.Should().Be(valorDesejado);
         simulacao.PrazoMeses.Should().Be(prazoMeses);
         simulacao.DataReferencia.Should().Be(dataReferencia);
-        simulacao.EnvelopJson.Should().Be(envelopJson);
+    }
+
+    [Fact]
+    public void Create_ComDescricaoInvalida_DeveLancarExcecao()
+    {
+        // Arrange
+        var taxaJuros = TaxaJuros.Create(0.015m).Value;
+        var valorDesejado = ValorMonetario.Create(10000.00m).Value;
+        var prazoMeses = PrazoMeses.Create(24).Value;
+        var dataReferencia = DateOnly.FromDateTime(DateTime.Today);
+
+        // Act & Assert
+        var action = () => Simulacao.Create(123, "", taxaJuros, valorDesejado, prazoMeses, dataReferencia);
+        action.Should().Throw<BusinessRuleException>().WithMessage("*obrigatória*");
+    }
+
+    [Fact]
+    public void Create_ComDataFutura_DeveLancarExcecao()
+    {
+        // Arrange
+        var taxaJuros = TaxaJuros.Create(0.015m).Value;
+        var valorDesejado = ValorMonetario.Create(10000.00m).Value;
+        var prazoMeses = PrazoMeses.Create(24).Value;
+        var dataFutura = DateOnly.FromDateTime(DateTime.Today.AddDays(1));
+
+        // Act & Assert
+        var action = () => Simulacao.Create(123, "Produto", taxaJuros, valorDesejado, prazoMeses, dataFutura);
+        action.Should().Throw<BusinessRuleException>().WithMessage("*futura*");
     }
 
     [Fact]
     public void Resultados_DeveInicializarComoListaVazia()
     {
+        // Arrange
+        var taxaJuros = TaxaJuros.Create(0.015m).Value;
+        var valorDesejado = ValorMonetario.Create(10000.00m).Value;
+        var prazoMeses = PrazoMeses.Create(24).Value;
+        var dataReferencia = DateOnly.FromDateTime(DateTime.Today);
+
         // Act
-        var simulacao = new Simulacao();
+        var simulacao = Simulacao.Create(123, "Produto", taxaJuros, valorDesejado, prazoMeses, dataReferencia);
 
         // Assert
         simulacao.Resultados.Should().NotBeNull();
@@ -73,51 +107,75 @@ public class SimulacaoTests
     }
 
     [Fact]
-    public void Resultados_DevePermitirAdicionarResultados()
+    public void AdicionarResultado_ComResultadoValido_DeveAdicionar()
     {
         // Arrange
-        var simulacao = new Simulacao();
-        var resultado1 = new ResultadoSimulacao();
-        var resultado2 = new ResultadoSimulacao();
+        var taxaJuros = TaxaJuros.Create(0.015m).Value;
+        var valorDesejado = ValorMonetario.Create(10000.00m).Value;
+        var prazoMeses = PrazoMeses.Create(24).Value;
+        var dataReferencia = DateOnly.FromDateTime(DateTime.Today);
+        var simulacao = Simulacao.Create(123, "Produto", taxaJuros, valorDesejado, prazoMeses, dataReferencia);
+        var resultado = new ResultadoSimulacao();
 
         // Act
-        simulacao.Resultados.Add(resultado1);
-        simulacao.Resultados.Add(resultado2);
+        simulacao.AdicionarResultado(resultado);
 
         // Assert
-        simulacao.Resultados.Should().HaveCount(2);
-        simulacao.Resultados.Should().Contain(resultado1);
-        simulacao.Resultados.Should().Contain(resultado2);
+        simulacao.Resultados.Should().HaveCount(1);
+        simulacao.Resultados.Should().Contain(resultado);
     }
 
     [Fact]
-    public void PropriedadesIniciais_DeveTerValoresPadrao()
+    public void AdicionarResultado_ComResultadoNulo_DeveLancarExcecao()
     {
+        // Arrange
+        var taxaJuros = TaxaJuros.Create(0.015m).Value;
+        var valorDesejado = ValorMonetario.Create(10000.00m).Value;
+        var prazoMeses = PrazoMeses.Create(24).Value;
+        var dataReferencia = DateOnly.FromDateTime(DateTime.Today);
+        var simulacao = Simulacao.Create(123, "Produto", taxaJuros, valorDesejado, prazoMeses, dataReferencia);
+
+        // Act & Assert
+        var action = () => simulacao.AdicionarResultado(null!);
+        action.Should().Throw<BusinessRuleException>().WithMessage("*nulo*");
+    }
+
+    [Fact]
+    public void DefinirEnvelopJson_ComJsonValido_DeveDefinir()
+    {
+        // Arrange
+        var taxaJuros = TaxaJuros.Create(0.015m).Value;
+        var valorDesejado = ValorMonetario.Create(10000.00m).Value;
+        var prazoMeses = PrazoMeses.Create(24).Value;
+        var dataReferencia = DateOnly.FromDateTime(DateTime.Today);
+        var simulacao = Simulacao.Create(123, "Produto", taxaJuros, valorDesejado, prazoMeses, dataReferencia);
+        var envelopJson = "{\"teste\": \"valor\"}";
+
         // Act
-        var simulacao = new Simulacao();
+        simulacao.DefinirEnvelopJson(envelopJson);
 
         // Assert
-        simulacao.DescricaoProduto.Should().BeEmpty();
-        simulacao.EnvelopJson.Should().BeEmpty();
+        simulacao.EnvelopJson.Should().Be(envelopJson);
+    }
+
+    [Fact]
+    public void DefinirEnvelopJson_ComJsonVazio_DeveLancarExcecao()
+    {
+        // Arrange
+        var taxaJuros = TaxaJuros.Create(0.015m).Value;
+        var valorDesejado = ValorMonetario.Create(10000.00m).Value;
+        var prazoMeses = PrazoMeses.Create(24).Value;
+        var dataReferencia = DateOnly.FromDateTime(DateTime.Today);
+        var simulacao = Simulacao.Create(123, "Produto", taxaJuros, valorDesejado, prazoMeses, dataReferencia);
+
+        // Act & Assert
+        var action = () => simulacao.DefinirEnvelopJson("");
+        action.Should().Throw<BusinessRuleException>().WithMessage("*obrigatório*");
     }
 
     [Fact]
     public void Classe_DeveSerSealed()
     {
-        // Act & Assert
         typeof(Simulacao).IsSealed.Should().BeTrue();
-    }
-
-    [Fact]
-    public void IdSimulacao_DeveSerInitOnly()
-    {
-        // Arrange
-        var simulacao = new Simulacao();
-        var idOriginal = simulacao.IdSimulacao;
-
-        // Act & Assert
-        // Como IdSimulacao é init-only, não deve ser possível alterá-lo após a criação
-        // Isso é testado verificando que o valor permanece o mesmo
-        simulacao.IdSimulacao.Should().Be(idOriginal);
     }
 }

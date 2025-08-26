@@ -96,16 +96,15 @@ public class SimulacaoServiceTests
         _mockCalculadoraSac.Setup(x => x.Calcular(It.IsAny<ValorMonetario>(), It.IsAny<TaxaJuros>(), It.IsAny<PrazoMeses>()))
             .Returns(resultadoCalculo);
 
-        var simulacao = new Simulacao
-        {
-            IdSimulacao = Guid.NewGuid(),
-            CodigoProduto = 1,
-            DescricaoProduto = "Produto Teste",
-            TaxaJuros = TaxaJuros.Create(0.015m).Value,
-            ValorDesejado = ValorMonetario.Create(10000m).Value,
-            PrazoMeses = 12,
-            Resultados = new List<ResultadoSimulacao> { resultadoCalculo }
-        };
+        var simulacao = Simulacao.Create(
+            1,
+            "Produto Teste",
+            TaxaJuros.Create(0.015m).Value,
+            ValorMonetario.Create(10000m).Value,
+            PrazoMeses.Create(12).Value,
+            DateOnly.FromDateTime(DateTime.Today)
+        );
+        simulacao.AdicionarResultado(resultadoCalculo);
 
         _mockSimulacaoRepository.Setup(x => x.AdicionarAsync(It.IsAny<Simulacao>(), ct))
             .ReturnsAsync(simulacao);
@@ -238,25 +237,20 @@ public class SimulacaoServiceTests
         _mockListarValidator.Setup(x => x.ValidateAsync(query, ct))
             .ReturnsAsync(validationResult);
 
-        var simulacoes = new List<Simulacao>
-        {
-            new Simulacao
-            {
-                IdSimulacao = Guid.NewGuid(),
-                ValorDesejado = ValorMonetario.Create(10000m).Value,
-                PrazoMeses = 12,
-                Resultados = new List<ResultadoSimulacao>
-                {
-                    new ResultadoSimulacao
-                    {
-                        Parcelas = new List<Parcela>
-                        {
-                            new Parcela { ValorPrestacao = ValorMonetario.Create(1000m).Value }
-                        }
-                    }
-                }
-            }
-        };
+        var simulacao = Simulacao.Create(
+            1,
+            "Produto Teste",
+            TaxaJuros.Create(0.015m).Value,
+            ValorMonetario.Create(10000m).Value,
+            PrazoMeses.Create(12).Value,
+            DateOnly.FromDateTime(DateTime.Today)
+        );
+        
+        var resultado = new ResultadoSimulacao();
+        resultado.Parcelas.Add(new Parcela { ValorPrestacao = ValorMonetario.Create(1000m).Value });
+        simulacao.AdicionarResultado(resultado);
+        
+        var simulacoes = new List<Simulacao> { simulacao };
 
         _mockSimulacaoRepository.Setup(x => x.ObterTotalSimulacoesAsync(ct))
             .ReturnsAsync(1);
@@ -400,16 +394,16 @@ public class SimulacaoServiceTests
         _mockCalculadoraSac.Setup(x => x.Calcular(It.IsAny<ValorMonetario>(), It.IsAny<TaxaJuros>(), It.IsAny<PrazoMeses>()))
             .Returns(resultadoSAC);
 
-        var simulacao = new Simulacao
-        {
-            IdSimulacao = Guid.NewGuid(),
-            CodigoProduto = 2,
-            DescricaoProduto = "Produto Premium",
-            TaxaJuros = TaxaJuros.Create(0.02m).Value,
-            ValorDesejado = ValorMonetario.Create(15000m).Value,
-            PrazoMeses = 24,
-            Resultados = new List<ResultadoSimulacao> { resultadoPRICE, resultadoSAC }
-        };
+        var simulacao = Simulacao.Create(
+            2,
+            "Produto Premium",
+            TaxaJuros.Create(0.02m).Value,
+            ValorMonetario.Create(15000m).Value,
+            PrazoMeses.Create(24).Value,
+            DateOnly.FromDateTime(DateTime.Today)
+        );
+        simulacao.AdicionarResultado(resultadoPRICE);
+        simulacao.AdicionarResultado(resultadoSAC);
 
         _mockSimulacaoRepository.Setup(x => x.AdicionarAsync(It.IsAny<Simulacao>(), ct))
             .ReturnsAsync(simulacao);
@@ -529,14 +523,15 @@ public class SimulacaoServiceTests
         _mockCalculadoraSac.Setup(x => x.Calcular(It.IsAny<ValorMonetario>(), It.IsAny<TaxaJuros>(), It.IsAny<PrazoMeses>()))
             .Returns(resultadoCalculo);
 
-        var simulacao = new Simulacao
-        {
-            IdSimulacao = Guid.NewGuid(),
-            CodigoProduto = 1,
-            DescricaoProduto = "Produto Teste",
-            TaxaJuros = TaxaJuros.Create(0.015m).Value,
-            Resultados = new List<ResultadoSimulacao> { resultadoCalculo }
-        };
+        var simulacao = Simulacao.Create(
+            1,
+            "Produto Teste",
+            TaxaJuros.Create(0.015m).Value,
+            ValorMonetario.Create(10000m).Value,
+            PrazoMeses.Create(12).Value,
+            DateOnly.FromDateTime(DateTime.Today)
+        );
+        simulacao.AdicionarResultado(resultadoCalculo);
 
         _mockSimulacaoRepository.Setup(x => x.AdicionarAsync(It.IsAny<Simulacao>(), ct))
             .ReturnsAsync(simulacao);

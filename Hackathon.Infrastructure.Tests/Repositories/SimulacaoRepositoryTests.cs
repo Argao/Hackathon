@@ -308,43 +308,43 @@ public class SimulacaoRepositoryTests
     {
         var taxaResult = TaxaJuros.Create(0.015m);
         var valorResult = ValorMonetario.Create(10000m);
+        var prazoResult = PrazoMeses.Create(12);
         
-        return new Simulacao
-        {
-            CodigoProduto = 1,
-            DescricaoProduto = "Produto Teste",
-            TaxaJuros = taxaResult.Value,
-            PrazoMeses = 12,
-            ValorDesejado = valorResult.Value,
-            DataReferencia = DateOnly.FromDateTime(DateTime.Today)
-        };
+        return Simulacao.Create(
+            1,
+            "Produto Teste",
+            taxaResult.Value,
+            valorResult.Value,
+            prazoResult.Value,
+            DateOnly.FromDateTime(DateTime.Today)
+        );
     }
 
     private static List<Simulacao> CreateListaSimulacoes()
     {
         var taxaResult = TaxaJuros.Create(0.015m);
         var valorResult = ValorMonetario.Create(10000m);
+        var prazoResult1 = PrazoMeses.Create(12);
+        var prazoResult2 = PrazoMeses.Create(24);
         
         return new List<Simulacao>
         {
-            new()
-            {
-                CodigoProduto = 1,
-                DescricaoProduto = "Produto 1",
-                TaxaJuros = taxaResult.Value,
-                PrazoMeses = 12,
-                ValorDesejado = valorResult.Value,
-                DataReferencia = DateOnly.FromDateTime(DateTime.Today)
-            },
-            new()
-            {
-                CodigoProduto = 2,
-                DescricaoProduto = "Produto 2",
-                TaxaJuros = taxaResult.Value,
-                PrazoMeses = 24,
-                ValorDesejado = valorResult.Value,
-                DataReferencia = DateOnly.FromDateTime(DateTime.Today)
-            }
+            Simulacao.Create(
+                1,
+                "Produto 1",
+                taxaResult.Value,
+                valorResult.Value,
+                prazoResult1.Value,
+                DateOnly.FromDateTime(DateTime.Today)
+            ),
+            Simulacao.Create(
+                2,
+                "Produto 2",
+                taxaResult.Value,
+                valorResult.Value,
+                prazoResult2.Value,
+                DateOnly.FromDateTime(DateTime.Today)
+            )
         };
     }
 
@@ -358,15 +358,14 @@ public class SimulacaoRepositoryTests
         
         for (int i = 1; i <= 3; i++)
         {
-            var simulacao = new Simulacao
-            {
-                CodigoProduto = i,
-                DescricaoProduto = $"Produto {i}",
-                TaxaJuros = taxaResult.Value,
-                PrazoMeses = prazoResult.Value,
-                ValorDesejado = valorResult.Value,
-                DataReferencia = DateOnly.FromDateTime(DateTime.Today)
-            };
+            var simulacao = Simulacao.Create(
+                i,
+                $"Produto {i}",
+                taxaResult.Value,
+                valorResult.Value,
+                prazoResult.Value,
+                DateOnly.FromDateTime(DateTime.Today)
+            );
 
             // Adicionar resultado
             var resultado = new ResultadoSimulacao
@@ -387,7 +386,7 @@ public class SimulacaoRepositoryTests
                 });
             }
 
-            simulacao.Resultados = new List<ResultadoSimulacao> { resultado };
+            simulacao.AdicionarResultado(resultado);
             simulacoes.Add(simulacao);
         }
 

@@ -37,7 +37,11 @@ public class ResultadoSimulacaoTests
         var resultado = new ResultadoSimulacao();
         var idSimulacao = Guid.NewGuid();
         var tipo = SistemaAmortizacao.PRICE;
-        var simulacao = new Simulacao();
+        var taxaJuros = TaxaJuros.Create(0.015m).Value;
+        var valorDesejado = ValorMonetario.Create(10000.00m).Value;
+        var prazoMeses = PrazoMeses.Create(24).Value;
+        var dataReferencia = DateOnly.FromDateTime(DateTime.Today);
+        var simulacao = Simulacao.Create(123, "Empréstimo Pessoal", taxaJuros, valorDesejado, prazoMeses, dataReferencia);
         var valorTotal = ValorMonetario.Create(15000.00m).Value;
 
         // Act
@@ -114,11 +118,11 @@ public class ResultadoSimulacaoTests
     {
         // Arrange
         var resultado = new ResultadoSimulacao();
-        var simulacao = new Simulacao
-        {
-            CodigoProduto = 123,
-            DescricaoProduto = "Empréstimo Pessoal"
-        };
+        var taxaJuros = TaxaJuros.Create(0.015m).Value;
+        var valorDesejado = ValorMonetario.Create(10000.00m).Value;
+        var prazoMeses = PrazoMeses.Create(24).Value;
+        var dataReferencia = DateOnly.FromDateTime(DateTime.Today);
+        var simulacao = Simulacao.Create(123, "Empréstimo Pessoal", taxaJuros, valorDesejado, prazoMeses, dataReferencia);
 
         // Act
         resultado.Simulacao = simulacao;

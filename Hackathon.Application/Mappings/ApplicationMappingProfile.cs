@@ -13,17 +13,17 @@ public static class ApplicationMappingProfile
 {
     public static void Configure()
     {
-        // Command to Entity mappings
-        TypeAdapterConfig<(RealizarSimulacaoCommand Command, Produto Produto), Simulacao>
-            .NewConfig()
-            .Map(dest => dest.CodigoProduto, src => src.Produto.Codigo)
-            .Map(dest => dest.DescricaoProduto, src => src.Produto.Descricao)
-            .Map(dest => dest.TaxaJuros, src => src.Produto.TaxaMensal)
-            .Map(dest => dest.PrazoMeses, src => (short)src.Command.Prazo)
-            .Map(dest => dest.ValorDesejado, src => ValorMonetario.Create(src.Command.Valor).Value)
-            .Map(dest => dest.DataReferencia, src => DateOnly.FromDateTime(DateTime.Today))
-            .Ignore(dest => dest.IdSimulacao)
-            .Ignore(dest => dest.Resultados);
+        // Command to Entity mappings - Removido pois agora usamos factory method
+        // TypeAdapterConfig<(RealizarSimulacaoCommand Command, Produto Produto), Simulacao>
+        //     .NewConfig()
+        //     .Map(dest => dest.CodigoProduto, src => src.Produto.Codigo)
+        //     .Map(dest => dest.DescricaoProduto, src => src.Produto.Descricao)
+        //     .Map(dest => dest.TaxaJuros, src => src.Produto.TaxaMensal)
+        //     .Map(dest => dest.PrazoMeses, src => (short)src.Command.Prazo)
+        //     .Map(dest => dest.ValorDesejado, src => ValorMonetario.Create(src.Command.Valor).Value)
+        //     .Map(dest => dest.DataReferencia, src => DateOnly.FromDateTime(DateTime.Today))
+        //     .Ignore(dest => dest.IdSimulacao)
+        //     .Ignore(dest => dest.Resultados);
 
         // Entity to Result mappings
         TypeAdapterConfig<Simulacao, SimulacaoResult>

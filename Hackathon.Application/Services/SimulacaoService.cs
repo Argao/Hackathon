@@ -69,13 +69,20 @@ public class SimulacaoService : ISimulacaoService
             throw new SimulacaoException(
                 $"Nenhum produto disponível para valor {valorEmprestimo} e prazo {prazoMeses}");
 
-        var simulacao = (command, produto).Adapt<Simulacao>();
+        var simulacao = Simulacao.Create(
+            produto.Codigo,
+            produto.Descricao,
+            produto.TaxaMensal,
+            valorMonetario,
+            prazoMeses,
+            DateOnly.FromDateTime(DateTime.Today)
+        );
 
         var resultados = _calculadoras
             .Select(c => c.Calcular(valorMonetario, produto.TaxaMensal, prazoMeses))
             .ToList();
 
-        simulacao.Resultados = resultados;
+        simulacao.AdicionarResultados(resultados);
 
         // Mapear resultado direto dos cálculos antes de persistir
         var result = new SimulacaoResult(

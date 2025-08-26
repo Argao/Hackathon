@@ -5,8 +5,8 @@ namespace Hackathon.Domain.ValueObjects;
 /// </summary>
 public readonly record struct TaxaJuros
 {
-    private const decimal TAXA_MINIMA = 0.000001m;  // 0.0001% - proteção contra taxas zero ou negativas
-    private const decimal TAXA_MAXIMA = 0.50m;      // 50% ao mês - proteção contra taxas absurdas
+    private const decimal TAXA_MINIMA = RegrasNegocio.Taxas.TAXA_MINIMA;
+    private const decimal TAXA_MAXIMA = RegrasNegocio.Taxas.TAXA_MAXIMA;
     
     public decimal Taxa { get; }
 
