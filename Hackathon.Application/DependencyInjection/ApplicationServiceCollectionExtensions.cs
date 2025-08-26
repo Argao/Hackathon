@@ -30,6 +30,7 @@ public static class ApplicationServiceCollectionExtensions
 
         // Services com responsabilidade única
         services.AddScoped<ISimulacaoOrchestrator, SimulacaoOrchestrator>();
+        services.AddScoped<ITelemetriaOrchestrator, TelemetriaOrchestrator>();
         services.AddScoped<ISimulacaoFactory, SimulacaoFactory>();
         services.AddScoped<ICalculadoraService, CalculadoraService>();
         services.AddScoped<IValidationService, ValidationService>();

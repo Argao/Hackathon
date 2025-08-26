@@ -66,7 +66,7 @@ public class ListarSimulacoesQueryTests
     [InlineData(101)]
     [InlineData(200)]
     [InlineData(1000)]
-    public void GetValidPageSize_ComTamanhoPaginaMaiorQueCem_DeveRetornarCem(int tamanhoPagina)
+    public void GetValidPageSize_ComTamanhoPaginaMaiorQueCem_DeveRetornarMesmoValor(int tamanhoPagina)
     {
         // Arrange
         var query = new ListarSimulacoesQuery(1, tamanhoPagina);
@@ -75,11 +75,11 @@ public class ListarSimulacoesQueryTests
         var result = query.GetValidPageSize();
 
         // Assert
-        result.Should().Be(100);
+        result.Should().Be(tamanhoPagina);
     }
 
     [Fact]
-    public void GetValidPageSize_ComTamanhoPaginaNoLimite_DeveRetornarCem()
+    public void GetValidPageSize_ComTamanhoPaginaCem_DeveRetornarCem()
     {
         // Arrange
         var query = new ListarSimulacoesQuery(1, 100);

@@ -12,7 +12,7 @@ namespace Hackathon.API.Contracts.Requests;
 /// 
 /// **Parâmetros:**
 /// - `Pagina`: Número da página desejada (deve ser maior que zero)
-/// - `QtdRegistrosPagina`: Quantidade de registros por página (deve estar entre 1 e 100)
+/// - `QtdRegistrosPagina`: Quantidade de registros por página (deve ser maior que zero)
 /// </remarks>
 public sealed record ListarSimulacoesRequest(
     [property: JsonPropertyName("pagina")]
@@ -20,6 +20,6 @@ public sealed record ListarSimulacoesRequest(
     int Pagina = 1,
     
     [property: JsonPropertyName("qtdRegistrosPagina")]
-    [Range(1, 100, ErrorMessage = "A quantidade de registros deve estar entre 1 e 100")]
+    [Range(1, int.MaxValue, ErrorMessage = "A quantidade de registros deve ser maior que zero")]
     int QtdRegistrosPagina = 10
 );

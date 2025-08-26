@@ -64,7 +64,7 @@ public class ListarSimulacoesQueryValidatorTests
     [InlineData(101)]
     [InlineData(200)]
     [InlineData(1000)]
-    public void Validate_ComTamanhoPaginaMaiorQueCem_DeveTerErroDeValidacao(int tamanhoPagina)
+    public void Validate_ComTamanhoPaginaMaiorQueCem_DeveSerValido(int tamanhoPagina)
     {
         // Arrange
         var query = new ListarSimulacoesQuery(1, tamanhoPagina);
@@ -73,8 +73,7 @@ public class ListarSimulacoesQueryValidatorTests
         var result = _validator.Validate(query);
 
         // Assert
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().ContainSingle(e => e.PropertyName == "TamanhoPagina" && e.ErrorMessage == "Tamanho da página não pode exceder 100 itens");
+        result.IsValid.Should().BeTrue();
     }
 
     [Fact]
@@ -156,7 +155,7 @@ public class ListarSimulacoesQueryValidatorTests
     }
 
     [Fact]
-    public void Validate_ComTamanhoPaginaExcedendoLimitePorPouco_DeveTerErroDeValidacao()
+    public void Validate_ComTamanhoPaginaExcedendoLimitePorPouco_DeveSerValido()
     {
         // Arrange
         var query = new ListarSimulacoesQuery(1, 101);
@@ -165,8 +164,7 @@ public class ListarSimulacoesQueryValidatorTests
         var result = _validator.Validate(query);
 
         // Assert
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == "TamanhoPagina");
+        result.IsValid.Should().BeTrue();
     }
 
     [Fact]

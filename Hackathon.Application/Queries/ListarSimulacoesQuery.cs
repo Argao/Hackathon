@@ -17,7 +17,7 @@ public sealed record ListarSimulacoesQuery(
     public int GetValidPageNumber() => Math.Max(1, NumeroPagina);
     
     /// <summary>
-    /// Retorna tamanho de página válido (entre 1 e 100)
+    /// Retorna tamanho de página válido (mínimo 1)
     /// </summary>
-    public int GetValidPageSize() => Math.Max(1, Math.Min(100, TamanhoPagina));
+    public int GetValidPageSize() => Math.Max(1, TamanhoPagina);
 };

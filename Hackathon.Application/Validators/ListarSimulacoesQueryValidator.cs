@@ -16,8 +16,6 @@ public class ListarSimulacoesQueryValidator : AbstractValidator<ListarSimulacoes
 
         RuleFor(x => x.TamanhoPagina)
             .GreaterThanOrEqualTo(1)
-            .WithMessage("Tamanho da página deve ser maior ou igual a 1")
-            .LessThanOrEqualTo(100)
-            .WithMessage("Tamanho da página não pode exceder 100 itens");
+            .WithMessage("Tamanho da página deve ser maior ou igual a 1");
     }
 }

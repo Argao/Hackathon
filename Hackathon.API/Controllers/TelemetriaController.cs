@@ -1,7 +1,7 @@
 using Hackathon.API.Contracts.Responses;
-using Hackathon.Application.Interfaces;
-using Hackathon.Domain.Exceptions;
+using Hackathon.Application.Queries;
 using Mapster;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Hackathon.API.Controllers;
@@ -20,19 +20,8 @@ namespace Hackathon.API.Controllers;
 [Route("telemetria")]
 [Produces("application/json")]
 [ApiExplorerSettings(GroupName = "Telemetria")]
-public class TelemetriaController : ControllerBase
+public class TelemetriaController(IMediator mediator) : ControllerBase
 {
-    private readonly ITelemetriaService _telemetriaService;
-    private readonly ILogger<TelemetriaController> _logger;
-
-    public TelemetriaController(
-        ITelemetriaService telemetriaService,
-        ILogger<TelemetriaController> logger)
-    {
-        _telemetriaService = telemetriaService;
-        _logger = logger;
-    }
-
     /// <summary>
     /// Obtém dados de telemetria agregados por data de referência
     /// </summary>
@@ -78,45 +67,23 @@ public class TelemetriaController : ControllerBase
         [FromQuery] DateOnly dataReferencia,
         CancellationToken ct = default)
     {
-        _logger.LogInformation("Consultando telemetria para data: {DataReferencia}", dataReferencia);
-
-        // Validação básica de data
-        if (dataReferencia > DateOnly.FromDateTime(DateTime.Now))
+        try
         {
-            throw new Hackathon.Domain.Exceptions.ValidationException("Data de referência não pode ser futura");
+            var query = new ObterTelemetriaQuery(dataReferencia);
+            var result = await mediator.Send(query, ct);
+            
+            var response = result.Adapt<TelemetriaResponse>();
+            
+            return Ok(response);
         }
-
-        // Consultar telemetria no serviço
-        var result = await _telemetriaService.ObterTelemetriaPorDataAsync(dataReferencia, ct);
-
-        // Se não houver dados, retornar 404 com estrutura vazia
-        if (!result.ListaEndpoints.Any())
+        catch (Hackathon.Domain.Exceptions.SimulacaoException ex) when (ex.Message.Contains("Nenhum dado de telemetria encontrado"))
         {
-            _logger.LogInformation("Nenhum dado de telemetria encontrado para data: {DataReferencia}", dataReferencia);
             return NotFound(new 
             { 
                 message = "Nenhum dado de telemetria encontrado para a data especificada",
                 dataReferencia = dataReferencia
             });
         }
-
-        // Mapear para response da API
-        var response = new TelemetriaResponse(
-            DataReferencia: result.DataReferencia,
-            ListaEndpoints: result.ListaEndpoints.Select(api => new TelemetriaEndpointResponse(
-                NomeApi: api.NomeApi,
-                QtdRequisicoes: api.QtdRequisicoes,
-                TempoMedio: api.TempoMedio,
-                TempoMinimo: api.TempoMinimo,
-                TempoMaximo: api.TempoMaximo,
-                PercentualSucesso: api.PercentualSucesso
-            )).ToList()
-        );
-
-        _logger.LogInformation("Telemetria consultada com sucesso: {QtdApis} APIs encontradas", 
-            response.ListaEndpoints.Count);
-
-        return Ok(response);
     }
 
     /// <summary>
