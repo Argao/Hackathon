@@ -65,6 +65,7 @@ public class PagedRequestTests
     [InlineData(-1, 10)]
     [InlineData(5, 5)]
     [InlineData(100, 100)]
+    [InlineData(1000, 1000)]
     public void GetValidPageSize_ShouldReturnValidPageSize(int input, int expected)
     {
         // Arrange

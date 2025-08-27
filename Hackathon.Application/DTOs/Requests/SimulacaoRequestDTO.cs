@@ -1,11 +1,12 @@
 using System.ComponentModel.DataAnnotations;
+using Hackathon.Domain.ValueObjects;
 
 namespace Hackathon.Application.DTOs.Requests;
 
 public class SimulacaoRequestDTO
 {
     [Required(ErrorMessage = "Valor é obrigatório")]
-    [Range(0.01, 9999999999999999.99, ErrorMessage = "Valor deve estar entre 0.01 e 9999999999999999.99")]
+    [Range(0.01, double.MaxValue, ErrorMessage = "Valor deve ser maior que zero")]
     public decimal Valor { get; set; }
 
     [Required(ErrorMessage = "Prazo é obrigatório")]

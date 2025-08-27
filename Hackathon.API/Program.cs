@@ -2,19 +2,17 @@ using System.Data;
 using System.Reflection;
 using Hackathon.API.Mappings;
 using Hackathon.API.Middleware;
-using Hackathon.Infrastructure.DependencyInjection;
-using Hackathon.Infrastructure.Services;
 using Mapster;
-using Microsoft.Data.SqlClient;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+using System.Threading;
+using Hackathon.Application.Extensions;
+using Hackathon.Infrastructure.Extensions;
+using Hackathon.Infrastructure.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-
+// Configurar serviços básicos da API
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -71,6 +69,9 @@ builder.Services.AddHealthChecks();
 // Configuração da infraestrutura isolada
 builder.Services.AddInfrastructure(builder.Configuration);
 
+// Configuração da camada Application com SOLID
+builder.Services.AddApplicationServices();
+
 // Configure API Mappings
 ApiMappingProfile.Configure();
 
@@ -78,37 +79,13 @@ TypeAdapterConfig.GlobalSettings.Compile();
 
 var app = builder.Build();
 
-// Aplicar migrations automaticamente na inicialização
-using (var scope = app.Services.CreateScope())
-{
-    var dbInitializer = scope.ServiceProvider.GetRequiredService<DatabaseInitializationService>();
-    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-    
-    try
-    {
-        logger.LogInformation("🔄 Iniciando inicialização do banco de dados...");
-        await dbInitializer.InitializeDatabaseAsync();
-        logger.LogInformation("✅ Banco de dados inicializado com sucesso!");
-    }
-    catch (Exception ex)
-    {
-        logger.LogError(ex, "❌ Erro crítico ao inicializar banco de dados: {Message}", ex.Message);
-        
-        // Em desenvolvimento, permitir continuar com erro
-        if (app.Environment.IsDevelopment())
-        {
-            logger.LogWarning("⚠️ Continuando em modo desenvolvimento apesar do erro...");
-        }
-        else
-        {
-            // Em produção, falhar rápido
-            logger.LogCritical("💥 Falha crítica na inicialização do banco. Encerrando aplicação.");
-            throw;
-        }
-    }
-}
+// Configurar pipeline de infraestrutura
+app.UseInfrastructurePipeline();
 
-// Configure the HTTP request pipeline.
+// Inicialização do banco baseada no ambiente (encapsulada na infraestrutura)
+app.UseInfrastructureDatabaseInitialization();
+
+// Configurar pipeline de requisições HTTP
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -124,21 +101,13 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-// Desabilitar HTTPS redirection em container (quando DOTNET_RUNNING_IN_CONTAINER=true)
-var isRunningInContainer = Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true";
-if (!isRunningInContainer)
-{
-    app.UseHttpsRedirection();
-}
+// Middleware de inicialização do banco de dados
+app.UseDatabaseInitialization();
 
-
-// Servir arquivos estáticos (necessário para CSS personalizado do Swagger)
-app.UseStaticFiles();
-
-// 🔥 Middleware de telemetria ANTES do roteamento para capturar todas as requisições
+// Middleware de telemetria antes do roteamento
 app.UseMiddleware<TelemetriaMiddleware>();
 
-// 🛡️ Global Exception Handler
+// Global Exception Handler
 app.UseMiddleware<GlobalExceptionHandler>();
 
 app.UseAuthorization();

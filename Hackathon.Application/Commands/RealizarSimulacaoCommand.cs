@@ -1,5 +1,6 @@
 using Hackathon.Application.Results;
 using Hackathon.Domain.ValueObjects;
+using MediatR;
 
 namespace Hackathon.Application.Commands;
 
@@ -9,7 +10,7 @@ namespace Hackathon.Application.Commands;
 public sealed record RealizarSimulacaoCommand(
     decimal Valor,
     int Prazo
-)
+) : IRequest<SimulacaoResult>
 {
     /// <summary>
     /// Valida e converte os dados do comando para Value Objects

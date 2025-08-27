@@ -44,8 +44,6 @@ run_production() {
     print_warning "Aguardando containers..."
     sleep 15
     
-    # Banco será inicializado automaticamente pelo container
-    
     # Verificar status
     echo -e "\n${YELLOW}Status dos containers:${NC}"
     docker compose ps
@@ -151,10 +149,6 @@ cleanup() {
     
     print_warning "Parando todos os serviços..."
     stop_services
-    
-    print_warning "Removendo volumes..."
-    docker volume rm hackathon-data 2>/dev/null || true
-    docker volume rm hackathon-data-dev 2>/dev/null || true
     
     print_warning "Removendo imagens..."
     docker rmi hackathon-api:latest 2>/dev/null || true

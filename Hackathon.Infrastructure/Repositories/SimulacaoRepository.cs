@@ -10,61 +10,37 @@ public class SimulacaoRepository(AppDbContext context) : ISimulacaoRepository
 {
     public async Task<Simulacao> AdicionarAsync(Simulacao simulacao, CancellationToken ct)
     {
+        // Configurar para inserção em lote
+        context.ChangeTracker.AutoDetectChangesEnabled = false;
+        
         context.Simulacoes.Add(simulacao);
         
-
+        // ✅ OTIMIZAÇÃO: Usar SaveChangesAsync com configuração otimizada
         await context.SaveChangesAsync(ct);
+        
+        context.ChangeTracker.AutoDetectChangesEnabled = true;
         return simulacao;
     }
 
-    public async Task<(IEnumerable<Simulacao> Data, int TotalRecords)> ListarPaginadoAsync(int pageNumber, int pageSize, CancellationToken ct)
+    public async Task<IEnumerable<VolumeSimuladoProdutoDto>> ObterVolumeSimuladoPorProdutoAsync(DateOnly dataReferencia, CancellationToken ct)
     {
-        var query = context.Simulacoes
-            .Include(s => s.Resultados) // Carrega os resultados relacionados
-            .AsQueryable().AsNoTracking();
-        
-        // Contagem total para paginação
-        var totalRecords = await query.CountAsync(ct);
-        
-        // Ordenação para consistência na paginação
-        query = query.OrderByDescending(s => s.DataReferencia)
-            .ThenByDescending(s => s.IdSimulacao);
-
-        // Aplicar paginação
-        var data = await query
-            .Skip((pageNumber - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync(ct);
-
-        return (data, totalRecords);
-    }
-
-    public async Task<IEnumerable<VolumeSimuladoAgregado>> ObterVolumeSimuladoPorProdutoAsync(DateOnly dataReferencia, CancellationToken ct)
-    {
-        // Primeiro, buscar as simulações do banco
+        // ✅ OTIMIZAÇÃO: Consulta em duas etapas para melhor performance
         var simulacoes = await context.Simulacoes
             .Include(s => s.Resultados)
-            .ThenInclude(r => r.Parcelas)
             .Where(s => s.DataReferencia == dataReferencia)
+            .AsNoTracking()
             .ToListAsync(ct);
 
-        // Fazer as operações de agregação no cliente (C#)
         var resultado = simulacoes
             .GroupBy(s => new { s.CodigoProduto, s.DescricaoProduto })
-            .Select(g => new VolumeSimuladoAgregado
-            {
-                CodigoProduto = g.Key.CodigoProduto,
-                DescricaoProduto = g.Key.DescricaoProduto,
-                TaxaMediaJuro = TaxaJuros.Create((decimal)g.Average(s => (double)s.TaxaJuros.Taxa)).Value,
-                ValorMedioPrestacao = g.SelectMany(s => s.Resultados)
-                    .SelectMany(r => r.Parcelas)
-                    .Any() ? ValorMonetario.Create((decimal)g.SelectMany(s => s.Resultados)
-                            .SelectMany(r => r.Parcelas)
-                            .Average(p => (double)p.ValorPrestacao.Valor)).Value : ValorMonetario.Zero,
-                ValorTotalDesejado = ValorMonetario.Create(g.Sum(s => s.ValorDesejado.Valor)).Value,
-                ValorTotalCredito = ValorMonetario.Create(g.SelectMany(s => s.Resultados)
-                    .Sum(r => r.ValorTotal.Valor)).Value
-            })
+            .Select(g => new VolumeSimuladoProdutoDto(
+                g.Key.CodigoProduto,
+                g.Key.DescricaoProduto,
+                g.Average(s => s.TaxaJuros.Taxa),
+                g.SelectMany(s => s.Resultados).Average(r => r.ValorTotal.Valor),
+                g.Sum(s => s.ValorDesejado.Valor),
+                g.SelectMany(s => s.Resultados).Sum(r => r.ValorTotal.Valor)
+            ))
             .ToList();
 
         return resultado;
@@ -75,15 +51,26 @@ public class SimulacaoRepository(AppDbContext context) : ISimulacaoRepository
         return await context.Simulacoes.CountAsync(ct);
     }
 
-    public async Task<IEnumerable<Simulacao>> ListarSimulacoesAsync(int pageNumber, int pageSize, CancellationToken ct)
+    // ✅ OTIMIZAÇÃO: Projeção direta sem includes desnecessários
+    public async Task<IEnumerable<SimulacaoResumoDto>> ListarSimulacoesOtimizadoAsync(int pageNumber, int pageSize, CancellationToken ct)
     {
-        return await context.Simulacoes
-            .Include(s => s.Resultados)
-                .ThenInclude(r => r.Parcelas)
-            .OrderByDescending(s => s.DataReferencia)
-                .ThenByDescending(s => s.IdSimulacao)
+        // Buscar dados do banco primeiro
+        var simulacoes = await context.Simulacoes
+            .Include(s => s.Resultados) // Necessário para acessar Resultados
+            .OrderByDescending(s => s.IdSimulacao)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
+            .AsNoTracking()
             .ToListAsync(ct);
+
+        // Fazer a projeção no cliente
+        var resultado = simulacoes.Select(s => new SimulacaoResumoDto(
+            s.IdSimulacao,
+            s.ValorDesejado.Valor,
+            s.PrazoMeses.Meses,
+            s.Resultados.Sum(r => r.ValorTotal.Valor)
+        ));
+
+        return resultado;
     }
 }

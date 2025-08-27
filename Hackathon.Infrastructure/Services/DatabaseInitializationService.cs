@@ -1,13 +1,11 @@
 using Hackathon.Infrastructure.Context;
+using Hackathon.Infrastructure.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace Hackathon.Infrastructure.Services;
 
-/// <summary>
-/// Serviço responsável por inicializar o banco de dados e aplicar migrations
-/// </summary>
-public class DatabaseInitializationService
+public class DatabaseInitializationService : IDatabaseInitializationService
 {
     private readonly AppDbContext _context;
     private readonly ILogger<DatabaseInitializationService> _logger;
@@ -18,21 +16,18 @@ public class DatabaseInitializationService
         _logger = logger;
     }
 
-    /// <summary>
-    /// Aplica as migrations pendentes no banco de dados
-    /// </summary>
     public async Task InitializeDatabaseAsync()
     {
         try
         {
-            _logger.LogInformation("Iniciando aplicação de migrations...");
+    
             
             // Garantir que o diretório do banco existe
             await EnsureDatabaseDirectoryExistsAsync();
             
             await _context.Database.MigrateAsync();
             
-            _logger.LogInformation("✓ Migrations aplicadas com sucesso!");
+
         }
         catch (Exception ex)
         {
@@ -41,9 +36,6 @@ public class DatabaseInitializationService
         }
     }
 
-    /// <summary>
-    /// Garante que o diretório do banco de dados existe
-    /// </summary>
     private async Task EnsureDatabaseDirectoryExistsAsync()
     {
         try
@@ -51,7 +43,7 @@ public class DatabaseInitializationService
             var connectionString = _context.Database.GetConnectionString();
             if (string.IsNullOrEmpty(connectionString))
             {
-                _logger.LogWarning("Connection string não encontrada");
+    
                 return;
             }
 
@@ -59,7 +51,7 @@ public class DatabaseInitializationService
             var dataSourceIndex = connectionString.IndexOf("Data Source=", StringComparison.OrdinalIgnoreCase);
             if (dataSourceIndex == -1)
             {
-                _logger.LogWarning("Data Source não encontrado na connection string");
+    
                 return;
             }
 
@@ -76,16 +68,16 @@ public class DatabaseInitializationService
             if (!string.IsNullOrEmpty(dbDirectory) && !Directory.Exists(dbDirectory))
             {
                 Directory.CreateDirectory(dbDirectory);
-                _logger.LogInformation("✓ Diretório do banco criado: {Path}", dbDirectory);
+    
             }
             else if (!string.IsNullOrEmpty(dbDirectory))
             {
-                _logger.LogInformation("✓ Diretório do banco já existe: {Path}", dbDirectory);
+
             }
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "⚠ Erro ao verificar/criar diretório do banco: {Message}", ex.Message);
+
         }
     }
 }

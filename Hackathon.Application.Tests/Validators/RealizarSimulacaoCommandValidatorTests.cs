@@ -89,7 +89,7 @@ public class RealizarSimulacaoCommandValidatorTests
 
         // Assert
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().ContainSingle(e => e.PropertyName == "Prazo" && e.ErrorMessage == "Prazo não pode exceder 600 meses (50 anos)");
+        result.Errors.Should().ContainSingle(e => e.PropertyName == "Prazo" && e.ErrorMessage == "Prazo não pode exceder 600 meses");
     }
 
     [Fact]

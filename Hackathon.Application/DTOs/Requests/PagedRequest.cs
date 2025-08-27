@@ -7,5 +7,5 @@ public class PagedRequest
     
     // Validação para evitar problemas
     public int GetValidPageNumber() => PageNumber < 1 ? 1 : PageNumber;
-    public int GetValidPageSize() => PageSize < 1 ? 10 : Math.Min(PageSize, 100); // Máximo 100 itens
+    public int GetValidPageSize() => PageSize < 1 ? 10 : PageSize;
 }

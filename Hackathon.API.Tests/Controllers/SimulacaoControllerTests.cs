@@ -2,25 +2,32 @@ using FluentAssertions;
 using Hackathon.API.Controllers;
 using Hackathon.API.Contracts.Requests;
 using Hackathon.API.Contracts.Responses;
+using Hackathon.API.Mappings;
 using Hackathon.Application.Commands;
 using Hackathon.Application.Interfaces;
 using Hackathon.Application.Queries;
 using Hackathon.Application.Results;
+using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
+using Mapster;
 
 namespace Hackathon.API.Tests.Controllers;
 
 public class SimulacaoControllerTests
 {
-    private readonly Mock<ISimulacaoService> _mockSimulacaoService;
+    private readonly Mock<IMediator> _mockMediator;
     private readonly SimulacaoController _controller;
 
     public SimulacaoControllerTests()
     {
-        _mockSimulacaoService = new Mock<ISimulacaoService>();
-        _controller = new SimulacaoController(_mockSimulacaoService.Object);
+        // Configurar o Mapster antes de cada teste
+        ApiMappingProfile.Configure();
+        TypeAdapterConfig.GlobalSettings.Compile();
+        
+        _mockMediator = new Mock<IMediator>();
+        _controller = new SimulacaoController(_mockMediator.Object);
     }
 
     [Fact]
@@ -28,9 +35,10 @@ public class SimulacaoControllerTests
     {
         // Arrange
         var request = new SimulacaoRequest(10000, 12);
+        var simulacaoId = Guid.NewGuid();
 
         var simulacaoResult = new SimulacaoResult(
-            Guid.NewGuid(),
+            simulacaoId,
             1,
             "Produto Teste",
             0.05m,
@@ -41,8 +49,8 @@ public class SimulacaoControllerTests
             }
         );
 
-        _mockSimulacaoService
-            .Setup(x => x.RealizarSimulacaoAsync(It.IsAny<RealizarSimulacaoCommand>(), It.IsAny<CancellationToken>()))
+        _mockMediator
+            .Setup(x => x.Send(It.IsAny<RealizarSimulacaoCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(simulacaoResult);
 
         // Act
@@ -56,11 +64,11 @@ public class SimulacaoControllerTests
         okResult!.Value.Should().BeOfType<SimulacaoResponse>();
         
         var response = okResult.Value as SimulacaoResponse;
-        response!.IdSimulacao.Should().Be(simulacaoResult.Id);
+        response!.IdSimulacao.Should().Be(simulacaoId);
         response.ResultadoSimulacao.Should().HaveCount(2);
 
-        _mockSimulacaoService.Verify(
-            x => x.RealizarSimulacaoAsync(It.IsAny<RealizarSimulacaoCommand>(), It.IsAny<CancellationToken>()),
+        _mockMediator.Verify(
+            x => x.Send(It.IsAny<RealizarSimulacaoCommand>(), It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -81,8 +89,8 @@ public class SimulacaoControllerTests
             10
         );
 
-        _mockSimulacaoService
-            .Setup(x => x.ListarSimulacoesAsync(It.IsAny<ListarSimulacoesQuery>(), It.IsAny<CancellationToken>()))
+        _mockMediator
+            .Setup(x => x.Send(It.IsAny<ListarSimulacoesQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(pagedResult);
 
         // Act
@@ -96,13 +104,13 @@ public class SimulacaoControllerTests
         okResult!.Value.Should().BeOfType<ListarSimulacoesResponse>();
         
         var response = okResult.Value as ListarSimulacoesResponse;
-        response!.Pagina.Should().Be(1);
-        response.QtdRegistros.Should().Be(5);
-        response.QtdRegistrosPagina.Should().Be(10);
-        response.Registros.Should().HaveCount(2);
+        response!.Pagina.Should().Be(pagedResult.CurrentPage);
+        response.QtdRegistros.Should().Be(pagedResult.TotalItems);
+        response.QtdRegistrosPagina.Should().Be(pagedResult.PageSize);
+        response.Registros.Should().HaveCount(pagedResult.Items.Count());
 
-        _mockSimulacaoService.Verify(
-            x => x.ListarSimulacoesAsync(It.IsAny<ListarSimulacoesQuery>(), It.IsAny<CancellationToken>()),
+        _mockMediator.Verify(
+            x => x.Send(It.IsAny<ListarSimulacoesQuery>(), It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -111,6 +119,7 @@ public class SimulacaoControllerTests
     {
         // Arrange
         var dataReferencia = DateOnly.FromDateTime(DateTime.Today);
+        var request = new VolumeSimuladoRequest(dataReferencia);
         
         var volumeResult = new VolumeSimuladoResult(
             dataReferencia,
@@ -120,12 +129,12 @@ public class SimulacaoControllerTests
             }
         );
 
-        _mockSimulacaoService
-            .Setup(x => x.ObterVolumeSimuladoAsync(It.IsAny<ObterVolumeSimuladoQuery>(), It.IsAny<CancellationToken>()))
+        _mockMediator
+            .Setup(x => x.Send(It.IsAny<ObterVolumeSimuladoQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(volumeResult);
 
         // Act
-        var result = await _controller.ObterVolumePorDia(dataReferencia, CancellationToken.None);
+        var result = await _controller.ObterVolumePorDia(request, CancellationToken.None);
 
         // Assert
         result.Should().NotBeNull();
@@ -138,8 +147,41 @@ public class SimulacaoControllerTests
         response!.DataReferencia.Should().Be(dataReferencia.ToString("yyyy-MM-dd"));
         response.Simulacoes.Should().HaveCount(1);
 
-        _mockSimulacaoService.Verify(
-            x => x.ObterVolumeSimuladoAsync(It.IsAny<ObterVolumeSimuladoQuery>(), It.IsAny<CancellationToken>()),
+        _mockMediator.Verify(
+            x => x.Send(It.IsAny<ObterVolumeSimuladoQuery>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task ObterVolumePorDia_ComDataSemDados_DeveRetornarNotFound()
+    {
+        // Arrange
+        var dataReferencia = DateOnly.FromDateTime(DateTime.Today);
+        var request = new VolumeSimuladoRequest(dataReferencia);
+
+        _mockMediator
+            .Setup(x => x.Send(It.IsAny<ObterVolumeSimuladoQuery>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new Hackathon.Domain.Exceptions.SimulacaoException("Nenhum dado de volume simulado encontrado para a data 2024-01-15"));
+
+        // Act
+        var result = await _controller.ObterVolumePorDia(request, CancellationToken.None);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Result.Should().BeOfType<NotFoundObjectResult>();
+        
+        var notFoundResult = result.Result as NotFoundObjectResult;
+        notFoundResult!.Value.Should().NotBeNull();
+        
+        // Verificar as propriedades usando JsonElement
+        var jsonString = System.Text.Json.JsonSerializer.Serialize(notFoundResult.Value);
+        var jsonElement = System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.JsonElement>(jsonString);
+        
+        jsonElement.GetProperty("message").GetString().Should().Contain("Nenhum dado de volume simulado encontrado");
+        jsonElement.GetProperty("dataReferencia").GetString().Should().Be(dataReferencia.ToString("yyyy-MM-dd"));
+
+        _mockMediator.Verify(
+            x => x.Send(It.IsAny<ObterVolumeSimuladoQuery>(), It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -159,16 +201,16 @@ public class SimulacaoControllerTests
 
         var cancellationToken = new CancellationToken();
 
-        _mockSimulacaoService
-            .Setup(x => x.RealizarSimulacaoAsync(It.IsAny<RealizarSimulacaoCommand>(), cancellationToken))
+        _mockMediator
+            .Setup(x => x.Send(It.IsAny<RealizarSimulacaoCommand>(), cancellationToken))
             .ReturnsAsync(simulacaoResult);
 
         // Act
         await _controller.RealizarSimulacao(request, cancellationToken);
 
         // Assert
-        _mockSimulacaoService.Verify(
-            x => x.RealizarSimulacaoAsync(It.IsAny<RealizarSimulacaoCommand>(), cancellationToken),
+        _mockMediator.Verify(
+            x => x.Send(It.IsAny<RealizarSimulacaoCommand>(), cancellationToken),
             Times.Once);
     }
 
@@ -187,16 +229,16 @@ public class SimulacaoControllerTests
 
         var cancellationToken = new CancellationToken();
 
-        _mockSimulacaoService
-            .Setup(x => x.ListarSimulacoesAsync(It.IsAny<ListarSimulacoesQuery>(), cancellationToken))
+        _mockMediator
+            .Setup(x => x.Send(It.IsAny<ListarSimulacoesQuery>(), cancellationToken))
             .ReturnsAsync(pagedResult);
 
         // Act
         await _controller.ListarSimulacoes(request, cancellationToken);
 
         // Assert
-        _mockSimulacaoService.Verify(
-            x => x.ListarSimulacoesAsync(It.IsAny<ListarSimulacoesQuery>(), cancellationToken),
+        _mockMediator.Verify(
+            x => x.Send(It.IsAny<ListarSimulacoesQuery>(), cancellationToken),
             Times.Once);
     }
 
@@ -205,6 +247,7 @@ public class SimulacaoControllerTests
     {
         // Arrange
         var dataReferencia = DateOnly.FromDateTime(DateTime.Today);
+        var request = new VolumeSimuladoRequest(dataReferencia);
         
         var volumeResult = new VolumeSimuladoResult(
             dataReferencia,
@@ -213,16 +256,16 @@ public class SimulacaoControllerTests
 
         var cancellationToken = new CancellationToken();
 
-        _mockSimulacaoService
-            .Setup(x => x.ObterVolumeSimuladoAsync(It.IsAny<ObterVolumeSimuladoQuery>(), cancellationToken))
+        _mockMediator
+            .Setup(x => x.Send(It.IsAny<ObterVolumeSimuladoQuery>(), cancellationToken))
             .ReturnsAsync(volumeResult);
 
         // Act
-        await _controller.ObterVolumePorDia(dataReferencia, cancellationToken);
+        await _controller.ObterVolumePorDia(request, cancellationToken);
 
         // Assert
-        _mockSimulacaoService.Verify(
-            x => x.ObterVolumeSimuladoAsync(It.IsAny<ObterVolumeSimuladoQuery>(), cancellationToken),
+        _mockMediator.Verify(
+            x => x.Send(It.IsAny<ObterVolumeSimuladoQuery>(), cancellationToken),
             Times.Once);
     }
 }

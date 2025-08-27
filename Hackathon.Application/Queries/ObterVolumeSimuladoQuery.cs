@@ -1,3 +1,6 @@
+using Hackathon.Application.Results;
+using MediatR;
+
 namespace Hackathon.Application.Queries;
 
 /// <summary>
@@ -5,4 +8,4 @@ namespace Hackathon.Application.Queries;
 /// </summary>
 public sealed record ObterVolumeSimuladoQuery(
     DateOnly DataReferencia
-);
+) : IRequest<VolumeSimuladoResult>;

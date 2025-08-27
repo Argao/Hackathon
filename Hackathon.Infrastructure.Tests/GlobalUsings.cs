@@ -21,4 +21,3 @@ global using Hackathon.Infrastructure.Context;
 global using Hackathon.Infrastructure.Repositories;
 global using Hackathon.Infrastructure.Services;
 global using Hackathon.Infrastructure.EventHub;
-global using Hackathon.Infrastructure.DependencyInjection;

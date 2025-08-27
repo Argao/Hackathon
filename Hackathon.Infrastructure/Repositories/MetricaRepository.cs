@@ -6,10 +6,6 @@ using Microsoft.Extensions.Logging;
 
 namespace Hackathon.Infrastructure.Repositories;
 
-/// <summary>
-/// Repositório para persistência de métricas de telemetria
-/// Otimizado para fire-and-forget com tratamento de erros silencioso
-/// </summary>
 public class MetricaRepository : IMetricaRepository
 {
     private readonly AppDbContext _context;
@@ -21,10 +17,6 @@ public class MetricaRepository : IMetricaRepository
         _logger = logger;
     }
 
-    /// <summary>
-    /// Salva métrica de forma assíncrona com tratamento de erro silencioso
-    /// Fire-and-forget: não propaga exceções para não impactar a API principal
-    /// </summary>
     public async Task SalvarMetricaAsync(MetricaRequisicao metrica, CancellationToken cancellationToken = default)
     {
         try
@@ -32,26 +24,20 @@ public class MetricaRepository : IMetricaRepository
             await _context.Metricas.AddAsync(metrica, cancellationToken);
             await _context.SaveChangesAsync(cancellationToken);
             
-            _logger.LogDebug("Métrica salva: {NomeApi} - {TempoMs}ms", 
-                metrica.NomeApi, metrica.TempoRespostaMs);
+
         }
         catch (OperationCanceledException)
         {
             // Cancelamento é esperado durante shutdown - não loggar como erro
-            _logger.LogDebug("Salvamento de métrica cancelado durante shutdown");
+
         }
         catch (Exception ex)
         {
             // Log do erro mas NÃO propaga exceção (fire-and-forget)
-            _logger.LogWarning(ex, "Falha ao salvar métrica de telemetria. " +
-                "API: {NomeApi}, Endpoint: {Endpoint}, Status: {StatusCode}",
-                metrica.NomeApi, metrica.Endpoint, metrica.StatusCode);
+
         }
     }
 
-    /// <summary>
-    /// Obtém métricas agregadas por data com consulta otimizada
-    /// </summary>
     public async Task<List<MetricaAgregada>> ObterMetricasPorDataAsync(
         DateOnly dataReferencia, 
         CancellationToken cancellationToken = default)

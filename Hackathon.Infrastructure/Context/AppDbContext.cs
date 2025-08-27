@@ -18,8 +18,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.HasDefaultSchema("main");
-        
         ConfigureValueObjectConversions(modelBuilder);
 
         // Configuração da tabela SIMULACAO
@@ -34,6 +32,17 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             
             entity.HasIndex(e => e.DataReferencia)
                 .HasDatabaseName("IX_SIMULACAO_DT_REFERENCIA");
+            
+            // Índices compostos para consultas de paginação
+            entity.HasIndex(e => new { e.DataReferencia, e.IdSimulacao })
+                .HasDatabaseName("IX_SIMULACAO_DATA_ID_COMPOSTO");
+            
+            entity.HasIndex(e => new { e.CodigoProduto, e.DataReferencia })
+                .HasDatabaseName("IX_SIMULACAO_PRODUTO_DATA");
+            
+            // Índice composto para consulta de volume simulado
+            entity.HasIndex(e => new { e.DataReferencia, e.CodigoProduto })
+                .HasDatabaseName("IX_SIMULACAO_DATA_PRODUTO");
             
             entity.Property(e => e.IdSimulacao)
                 .HasColumnName("ID_SIMULACAO")
@@ -66,6 +75,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             
             entity.Property(e => e.PrazoMeses)
                 .HasColumnName("NU_PRAZO_MESES")
+                .HasConversion(
+                    v => v.Meses,
+                    v => PrazoMeses.Create(v).Value)
                 .IsRequired();
             
             entity.Property(e => e.DataReferencia)
@@ -243,19 +255,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     {
         try
         {
-            var entries = ChangeTracker.Entries();
-            var parcelas = entries.Where(e => e.Entity is Parcela && e.State == EntityState.Added).Count();
-            
-            if (parcelas > 10)
-            {
-                Console.WriteLine($"⚡ BATCH INSERT: {parcelas} parcelas sendo inseridas em lote");
-            }
-            
             var startTime = DateTime.UtcNow;
             var result = await base.SaveChangesAsync(cancellationToken);
             var duration = DateTime.UtcNow - startTime;
             
-            if (duration.TotalMilliseconds > 100)
+            // Log apenas se demorar muito (aumentado threshold)
+            if (duration.TotalMilliseconds > 500)
             {
                 Console.WriteLine($"⚠️ SaveChanges demorou {duration.TotalMilliseconds}ms para {result} registros");
             }
@@ -270,29 +275,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
     private static void ConfigureValueObjectConversions(ModelBuilder modelBuilder)
     {
-        var volumeEntity = modelBuilder.Entity<VolumeSimuladoAgregado>();
-        volumeEntity.HasNoKey();
-        
-        // Conversão para TaxaJuros
-        volumeEntity.Property(e => e.TaxaMediaJuro)
-            .HasConversion(
-                v => v.Taxa,
-                v => TaxaJuros.Create(v).Value);
-
-        // Conversões para ValorMonetario
-        volumeEntity.Property(e => e.ValorMedioPrestacao)
-            .HasConversion(
-                v => v.Valor,
-                v => ValorMonetario.Create(v).Value);
-
-        volumeEntity.Property(e => e.ValorTotalDesejado)
-            .HasConversion(
-                v => v.Valor,
-                v => ValorMonetario.Create(v).Value);
-
-        volumeEntity.Property(e => e.ValorTotalCredito)
-            .HasConversion(
-                v => v.Valor,
-                v => ValorMonetario.Create(v).Value);
+        // Configurações de conversão de Value Objects removidas pois agora usamos DTOs
     }
 }

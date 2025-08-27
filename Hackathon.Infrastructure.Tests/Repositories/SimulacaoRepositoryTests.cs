@@ -46,7 +46,7 @@ public class SimulacaoRepositoryTests
     }
 
     [Fact]
-    public async Task ListarPaginadoAsync_ComDados_DeveRetornarResultadoPaginado()
+    public async Task ListarSimulacoesOtimizadoAsync_ComDados_DeveRetornarResultadoPaginado()
     {
         // Arrange
         var options = new DbContextOptionsBuilder<AppDbContext>()
@@ -62,16 +62,15 @@ public class SimulacaoRepositoryTests
         await context.SaveChangesAsync();
 
         // Act
-        var resultado = await repository.ListarPaginadoAsync(1, 10, CancellationToken.None);
+        var resultado = await repository.ListarSimulacoesOtimizadoAsync(1, 10, CancellationToken.None);
 
         // Assert
         resultado.Should().NotBeNull();
-        resultado.Data.Should().NotBeNull();
-        resultado.TotalRecords.Should().Be(simulacoes.Count);
+        resultado.Should().HaveCount(simulacoes.Count);
     }
 
     [Fact]
-    public async Task ListarPaginadoAsync_ComPaginaVazia_DeveRetornarListaVazia()
+    public async Task ListarSimulacoesOtimizadoAsync_ComPaginaVazia_DeveRetornarListaVazia()
     {
         // Arrange
         var options = new DbContextOptionsBuilder<AppDbContext>()
@@ -82,37 +81,11 @@ public class SimulacaoRepositoryTests
         var repository = new SimulacaoRepository(context);
 
         // Act
-        var resultado = await repository.ListarPaginadoAsync(1, 10, CancellationToken.None);
+        var resultado = await repository.ListarSimulacoesOtimizadoAsync(1, 10, CancellationToken.None);
 
         // Assert
         resultado.Should().NotBeNull();
-        resultado.Data.Should().BeEmpty();
-        resultado.TotalRecords.Should().Be(0);
-    }
-
-    [Fact]
-    public async Task ListarPaginadoAsync_ComPaginaMaiorQueTotal_DeveRetornarListaVazia()
-    {
-        // Arrange
-        var options = new DbContextOptionsBuilder<AppDbContext>()
-            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
-            .Options;
-
-        using var context = new AppDbContext(options);
-        var repository = new SimulacaoRepository(context);
-
-        // Adicionar dados de teste
-        var simulacoes = CreateListaSimulacoes();
-        context.Simulacoes.AddRange(simulacoes);
-        await context.SaveChangesAsync();
-
-        // Act
-        var resultado = await repository.ListarPaginadoAsync(10, 10, CancellationToken.None);
-
-        // Assert
-        resultado.Should().NotBeNull();
-        resultado.Data.Should().BeEmpty();
-        resultado.TotalRecords.Should().Be(simulacoes.Count);
+        resultado.Should().BeEmpty();
     }
 
     [Fact]
@@ -184,9 +157,9 @@ public class SimulacaoRepositoryTests
         var primeiroResultado = resultado.First();
         primeiroResultado.CodigoProduto.Should().Be(1);
         primeiroResultado.DescricaoProduto.Should().Be("Produto 1");
-        primeiroResultado.TaxaMediaJuro.Should().NotBeNull();
-        primeiroResultado.ValorTotalDesejado.Should().NotBeNull();
-        primeiroResultado.ValorTotalCredito.Should().NotBeNull();
+        primeiroResultado.TaxaMediaJuro.Should().BeGreaterThan(0);
+        primeiroResultado.ValorTotalDesejado.Should().BeGreaterThan(0);
+        primeiroResultado.ValorTotalCredito.Should().BeGreaterThan(0);
     }
 
     [Fact]
@@ -237,7 +210,7 @@ public class SimulacaoRepositoryTests
     }
 
     [Fact]
-    public async Task ListarSimulacoesAsync_ComDados_DeveRetornarSimulacoesPaginadas()
+    public async Task ListarSimulacoesOtimizadoAsync_ComDadosComResultados_DeveRetornarSimulacoesPaginadas()
     {
         // Arrange
         var options = new DbContextOptionsBuilder<AppDbContext>()
@@ -253,7 +226,7 @@ public class SimulacaoRepositoryTests
         await context.SaveChangesAsync();
 
         // Act
-        var resultado = await repository.ListarSimulacoesAsync(1, 10, CancellationToken.None);
+        var resultado = await repository.ListarSimulacoesOtimizadoAsync(1, 10, CancellationToken.None);
 
         // Assert
         resultado.Should().NotBeNull();
@@ -262,7 +235,7 @@ public class SimulacaoRepositoryTests
     }
 
     [Fact]
-    public async Task ListarSimulacoesAsync_SemDados_DeveRetornarListaVazia()
+    public async Task ListarSimulacoesOtimizadoAsync_SemDados_DeveRetornarListaVazia()
     {
         // Arrange
         var options = new DbContextOptionsBuilder<AppDbContext>()
@@ -273,31 +246,7 @@ public class SimulacaoRepositoryTests
         var repository = new SimulacaoRepository(context);
 
         // Act
-        var resultado = await repository.ListarSimulacoesAsync(1, 10, CancellationToken.None);
-
-        // Assert
-        resultado.Should().NotBeNull();
-        resultado.Should().BeEmpty();
-    }
-
-    [Fact]
-    public async Task ListarSimulacoesAsync_ComPaginaMaiorQueTotal_DeveRetornarListaVazia()
-    {
-        // Arrange
-        var options = new DbContextOptionsBuilder<AppDbContext>()
-            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
-            .Options;
-
-        using var context = new AppDbContext(options);
-        var repository = new SimulacaoRepository(context);
-
-        // Adicionar dados de teste
-        var simulacoes = CreateSimulacoesComResultados();
-        context.Simulacoes.AddRange(simulacoes);
-        await context.SaveChangesAsync();
-
-        // Act
-        var resultado = await repository.ListarSimulacoesAsync(10, 10, CancellationToken.None);
+        var resultado = await repository.ListarSimulacoesOtimizadoAsync(1, 10, CancellationToken.None);
 
         // Assert
         resultado.Should().NotBeNull();
@@ -308,43 +257,43 @@ public class SimulacaoRepositoryTests
     {
         var taxaResult = TaxaJuros.Create(0.015m);
         var valorResult = ValorMonetario.Create(10000m);
+        var prazoResult = PrazoMeses.Create(12);
         
-        return new Simulacao
-        {
-            CodigoProduto = 1,
-            DescricaoProduto = "Produto Teste",
-            TaxaJuros = taxaResult.Value,
-            PrazoMeses = 12,
-            ValorDesejado = valorResult.Value,
-            DataReferencia = DateOnly.FromDateTime(DateTime.Today)
-        };
+        return Simulacao.Create(
+            1,
+            "Produto Teste",
+            taxaResult.Value,
+            valorResult.Value,
+            prazoResult.Value,
+            DateOnly.FromDateTime(DateTime.Today)
+        );
     }
 
     private static List<Simulacao> CreateListaSimulacoes()
     {
         var taxaResult = TaxaJuros.Create(0.015m);
         var valorResult = ValorMonetario.Create(10000m);
+        var prazoResult1 = PrazoMeses.Create(12);
+        var prazoResult2 = PrazoMeses.Create(24);
         
         return new List<Simulacao>
         {
-            new()
-            {
-                CodigoProduto = 1,
-                DescricaoProduto = "Produto 1",
-                TaxaJuros = taxaResult.Value,
-                PrazoMeses = 12,
-                ValorDesejado = valorResult.Value,
-                DataReferencia = DateOnly.FromDateTime(DateTime.Today)
-            },
-            new()
-            {
-                CodigoProduto = 2,
-                DescricaoProduto = "Produto 2",
-                TaxaJuros = taxaResult.Value,
-                PrazoMeses = 24,
-                ValorDesejado = valorResult.Value,
-                DataReferencia = DateOnly.FromDateTime(DateTime.Today)
-            }
+            Simulacao.Create(
+                1,
+                "Produto 1",
+                taxaResult.Value,
+                valorResult.Value,
+                prazoResult1.Value,
+                DateOnly.FromDateTime(DateTime.Today)
+            ),
+            Simulacao.Create(
+                2,
+                "Produto 2",
+                taxaResult.Value,
+                valorResult.Value,
+                prazoResult2.Value,
+                DateOnly.FromDateTime(DateTime.Today)
+            )
         };
     }
 
@@ -358,15 +307,14 @@ public class SimulacaoRepositoryTests
         
         for (int i = 1; i <= 3; i++)
         {
-            var simulacao = new Simulacao
-            {
-                CodigoProduto = i,
-                DescricaoProduto = $"Produto {i}",
-                TaxaJuros = taxaResult.Value,
-                PrazoMeses = prazoResult.Value,
-                ValorDesejado = valorResult.Value,
-                DataReferencia = DateOnly.FromDateTime(DateTime.Today)
-            };
+            var simulacao = Simulacao.Create(
+                i,
+                $"Produto {i}",
+                taxaResult.Value,
+                valorResult.Value,
+                prazoResult.Value,
+                DateOnly.FromDateTime(DateTime.Today)
+            );
 
             // Adicionar resultado
             var resultado = new ResultadoSimulacao
@@ -387,7 +335,7 @@ public class SimulacaoRepositoryTests
                 });
             }
 
-            simulacao.Resultados = new List<ResultadoSimulacao> { resultado };
+            simulacao.AdicionarResultado(resultado);
             simulacoes.Add(simulacao);
         }
 

@@ -1,17 +1,21 @@
 using System.Diagnostics;
 using Hackathon.Application.Interfaces;
 using Microsoft.Extensions.Primitives;
+using System.Threading.Channels;
 
 namespace Hackathon.API.Middleware;
 
 /// <summary>
-/// Middleware para coleta automática de métricas de telemetria
-/// Implementa fire-and-forget para não impactar performance da API
+/// Middleware para coleta de métricas de telemetria
+/// Processamento em lote para minimizar overhead
 /// </summary>
 public class TelemetriaMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly ILogger<TelemetriaMiddleware> _logger;
+    private readonly Channel<MetricaData> _metricChannel;
+    private readonly CancellationTokenSource _cancellationTokenSource;
+    private readonly IServiceProvider _serviceProvider;
 
     // Endpoints que devem ser ignorados na telemetria (para evitar overhead desnecessário)
     private static readonly HashSet<string> EndpointsIgnorados = new(StringComparer.OrdinalIgnoreCase)
@@ -27,14 +31,27 @@ public class TelemetriaMiddleware
 
     public TelemetriaMiddleware(
         RequestDelegate next,
-        ILogger<TelemetriaMiddleware> logger)
+        ILogger<TelemetriaMiddleware> logger,
+        IServiceProvider serviceProvider)
     {
         _next = next;
         _logger = logger;
+        _serviceProvider = serviceProvider;
+        
+        // Configurar channel para processamento em lote
+        _metricChannel = Channel.CreateUnbounded<MetricaData>(new UnboundedChannelOptions 
+        { 
+            SingleReader = true,
+            SingleWriter = false 
+        });
+        _cancellationTokenSource = new CancellationTokenSource();
+        
+        // Iniciar worker em background
+        _ = ProcessMetricsAsync(_cancellationTokenSource.Token);
     }
 
     /// <summary>
-    /// Intercepta todas as requisições HTTP para coletar métricas
+    /// Intercepta requisições HTTP para coletar métricas
     /// </summary>
     public async Task InvokeAsync(HttpContext context)
     {
@@ -62,50 +79,90 @@ public class TelemetriaMiddleware
             // Parar cronômetro imediatamente após processamento
             stopwatch.Stop();
 
-            // 🔥 FIRE-AND-FORGET: Registrar métrica em background
-            // Resolver o serviço scoped do ServiceProvider em tempo de execução
-            _ = RegistrarMetricaAsync(
-                context,
-                nomeApi,
-                endpoint,
-                stopwatch.ElapsedMilliseconds,
-                context.Response.StatusCode >= 200 && context.Response.StatusCode < 300,
-                context.Response.StatusCode,
-                context.RequestAborted
-            );
+            // Processamento em lote: enfileirar métrica sem bloquear
+            var metricaData = new MetricaData
+            {
+                NomeApi = nomeApi,
+                Endpoint = endpoint,
+                TempoResposta = stopwatch.ElapsedMilliseconds,
+                Sucesso = context.Response.StatusCode >= 200 && context.Response.StatusCode < 300,
+                StatusCode = context.Response.StatusCode,
+                DataHora = DateTime.UtcNow
+            };
+
+            // Fire-and-forget: enfileirar sem aguardar
+            _ = _metricChannel.Writer.TryWrite(metricaData);
         }
     }
 
     /// <summary>
-    /// Registra métrica de forma assíncrona sem bloquear o thread principal
-    /// Resolve o serviço scoped em tempo de execução para evitar problemas de DI
+    /// Processa métricas em lote
     /// </summary>
-    private async Task RegistrarMetricaAsync(
-        HttpContext context,
-        string nomeApi,
-        string endpoint,
-        long tempoResposta,
-        bool sucesso,
-        int statusCode,
-        CancellationToken cancellationToken)
+    private async Task ProcessMetricsAsync(CancellationToken cancellationToken)
     {
+        var batch = new List<MetricaData>(100);
+        var batchTimeout = TimeSpan.FromSeconds(5);
+        var lastProcessTime = DateTime.UtcNow;
+
         try
         {
-            // Resolver o serviço scoped do ServiceProvider em tempo de execução
-            // Isso é necessário porque middlewares são singletons
-            var telemetriaService = context.RequestServices.GetRequiredService<ITelemetriaService>();
-            
-            await telemetriaService.RegistrarMetricaAsync(
-                nomeApi,
-                endpoint,
-                tempoResposta,
-                sucesso,
-                statusCode,
-                cancellationToken);
+            await foreach (var metric in _metricChannel.Reader.ReadAllAsync(cancellationToken))
+            {
+                batch.Add(metric);
+                
+                // Processar lote quando atingir 100 métricas ou após 5 segundos
+                var shouldProcess = batch.Count >= 100 || 
+                                  (DateTime.UtcNow - lastProcessTime) >= batchTimeout;
+                
+                if (shouldProcess && batch.Count > 0)
+                {
+                    await ProcessBatchAsync(batch);
+                    batch.Clear();
+                    lastProcessTime = DateTime.UtcNow;
+                }
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Processar lote final antes de encerrar
+            if (batch.Count > 0)
+            {
+                await ProcessBatchAsync(batch);
+            }
         }
         catch (Exception ex)
         {
-            _logger.LogDebug(ex, "Falha ao registrar métrica de telemetria para {Endpoint}", endpoint);
+            _logger.LogError(ex, "Erro crítico no processamento de métricas em lote");
+        }
+    }
+
+    /// <summary>
+    /// Processa um lote de métricas de uma vez
+    /// </summary>
+    private async Task ProcessBatchAsync(List<MetricaData> batch)
+    {
+        try
+        {
+            using var scope = _serviceProvider.CreateScope();
+            var telemetriaService = scope.ServiceProvider.GetRequiredService<ITelemetriaService>();
+            
+            // Processar todas as métricas do lote
+            foreach (var metric in batch)
+            {
+                await telemetriaService.RegistrarMetricaAsync(
+                    metric.NomeApi,
+                    metric.Endpoint,
+                    metric.TempoResposta,
+                    metric.Sucesso,
+                    metric.StatusCode,
+                    CancellationToken.None);
+            }
+            
+
+        }
+        catch (Exception ex)
+        {
+
         }
     }
 
@@ -135,5 +192,18 @@ public class TelemetriaMiddleware
 
         return EndpointsIgnorados.Any(ignored => 
             pathValue.StartsWith(ignored, StringComparison.OrdinalIgnoreCase));
+    }
+
+    /// <summary>
+    /// Dados da métrica para processamento em lote
+    /// </summary>
+    private class MetricaData
+    {
+        public string NomeApi { get; set; } = string.Empty;
+        public string Endpoint { get; set; } = string.Empty;
+        public long TempoResposta { get; set; }
+        public bool Sucesso { get; set; }
+        public int StatusCode { get; set; }
+        public DateTime DataHora { get; set; }
     }
 }

@@ -5,7 +5,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hackathon.API", "Hackathon.
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{88598F0D-7467-4C0A-B811-292BB7021E2F}"
 	ProjectSection(SolutionItems) = preProject
-		compose.yaml = compose.yaml
+		docker-compose.yml = docker-compose.yml
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hackathon.Domain", "Hackathon.Domain\Hackathon.Domain.csproj", "{3B61976C-37F2-4C0C-97DF-68074DF7A089}"
@@ -49,10 +49,7 @@ Global
 		{22DDEDFF-E1E0-451A-A7D8-C3DC25AA242C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{22DDEDFF-E1E0-451A-A7D8-C3DC25AA242C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{22DDEDFF-E1E0-451A-A7D8-C3DC25AA242C}.Release|Any CPU.Build.0 = Release|Any CPU
-		{5A1B2C3D-4E5F-6G7H-8I9J-K0L1M2N3O4P5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{5A1B2C3D-4E5F-6G7H-8I9J-K0L1M2N3O4P5}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{5A1B2C3D-4E5F-6G7H-8I9J-K0L1M2N3O4P5}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{5A1B2C3D-4E5F-6G7H-8I9J-K0L1M2N3O4P5}.Release|Any CPU.Build.0 = Release|Any CPU
+
 		{7DC4FCC5-2870-4961-96F4-114F893B2E06}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{7DC4FCC5-2870-4961-96F4-114F893B2E06}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7DC4FCC5-2870-4961-96F4-114F893B2E06}.Release|Any CPU.ActiveCfg = Release|Any CPU

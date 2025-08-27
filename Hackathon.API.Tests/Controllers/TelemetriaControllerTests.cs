@@ -1,28 +1,25 @@
 using FluentAssertions;
 using Hackathon.API.Controllers;
+using Hackathon.API.Contracts.Requests;
 using Hackathon.API.Contracts.Responses;
-using Hackathon.Application.Interfaces;
+using Hackathon.Application.Queries;
 using Hackathon.Application.Results;
-using Hackathon.Application.DTOs.Responses;
 using Hackathon.Domain.Exceptions;
-using Microsoft.AspNetCore.Http;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace Hackathon.API.Tests.Controllers;
 
 public class TelemetriaControllerTests
 {
-    private readonly Mock<ITelemetriaService> _mockTelemetriaService;
-    private readonly Mock<ILogger<TelemetriaController>> _mockLogger;
+    private readonly Mock<IMediator> _mockMediator;
     private readonly TelemetriaController _controller;
 
     public TelemetriaControllerTests()
     {
-        _mockTelemetriaService = new Mock<ITelemetriaService>();
-        _mockLogger = new Mock<ILogger<TelemetriaController>>();
-        _controller = new TelemetriaController(_mockTelemetriaService.Object, _mockLogger.Object);
+        _mockMediator = new Mock<IMediator>();
+        _controller = new TelemetriaController(_mockMediator.Object);
     }
 
     [Fact]
@@ -30,21 +27,22 @@ public class TelemetriaControllerTests
     {
         // Arrange
         var dataReferencia = DateOnly.FromDateTime(DateTime.Today);
+        var request = new TelemetriaRequest(dataReferencia);
         
-        var telemetriaResult = new TelemetriaFinalResponseDTO(
+        var telemetriaResult = new TelemetriaResult(
             dataReferencia,
-            new List<TelemetriaApiDTO>
+            new List<TelemetriaApiResult>
             {
                 new("Simulacao", 100, 150.5, 50L, 300L, 95.5)
             }
         );
 
-        _mockTelemetriaService
-            .Setup(x => x.ObterTelemetriaPorDataAsync(dataReferencia, It.IsAny<CancellationToken>()))
+        _mockMediator
+            .Setup(x => x.Send(It.IsAny<ObterTelemetriaQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(telemetriaResult);
 
         // Act
-        var result = await _controller.ObterTelemetriaPorDia(dataReferencia);
+        var result = await _controller.ObterTelemetriaPorDia(request);
 
         // Assert
         result.Should().NotBeNull();
@@ -59,8 +57,8 @@ public class TelemetriaControllerTests
         response.ListaEndpoints[0].NomeApi.Should().Be("Simulacao");
         response.ListaEndpoints[0].QtdRequisicoes.Should().Be(100);
 
-        _mockTelemetriaService.Verify(
-            x => x.ObterTelemetriaPorDataAsync(dataReferencia, It.IsAny<CancellationToken>()),
+        _mockMediator.Verify(
+            x => x.Send(It.IsAny<ObterTelemetriaQuery>(), It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -69,18 +67,14 @@ public class TelemetriaControllerTests
     {
         // Arrange
         var dataReferencia = DateOnly.FromDateTime(DateTime.Today);
-        
-        var telemetriaResult = new TelemetriaFinalResponseDTO(
-            dataReferencia,
-            new List<TelemetriaApiDTO>()
-        );
+        var request = new TelemetriaRequest(dataReferencia);
 
-        _mockTelemetriaService
-            .Setup(x => x.ObterTelemetriaPorDataAsync(dataReferencia, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(telemetriaResult);
+        _mockMediator
+            .Setup(x => x.Send(It.IsAny<ObterTelemetriaQuery>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new SimulacaoException("Nenhum dado de telemetria encontrado para a data 2024-01-15"));
 
         // Act
-        var result = await _controller.ObterTelemetriaPorDia(dataReferencia);
+        var result = await _controller.ObterTelemetriaPorDia(request);
 
         // Assert
         result.Should().NotBeNull();
@@ -89,26 +83,31 @@ public class TelemetriaControllerTests
         var notFoundResult = result.Result as NotFoundObjectResult;
         notFoundResult!.Value.Should().NotBeNull();
 
-        _mockTelemetriaService.Verify(
-            x => x.ObterTelemetriaPorDataAsync(dataReferencia, It.IsAny<CancellationToken>()),
+        _mockMediator.Verify(
+            x => x.Send(It.IsAny<ObterTelemetriaQuery>(), It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
     [Fact]
-    public async Task ObterTelemetriaPorDia_ComDataFutura_DeveLancarValidationException()
+    public async Task ObterTelemetriaPorDia_ComDataFutura_DeveLancarArgumentException()
     {
         // Arrange
         var dataFutura = DateOnly.FromDateTime(DateTime.Today.AddDays(1));
+        var request = new TelemetriaRequest(dataFutura);
+
+        _mockMediator
+            .Setup(x => x.Send(It.IsAny<ObterTelemetriaQuery>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new ArgumentException("Data de referência não pode ser futura"));
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<ValidationException>(
-            () => _controller.ObterTelemetriaPorDia(dataFutura));
+        var exception = await Assert.ThrowsAsync<ArgumentException>(
+            () => _controller.ObterTelemetriaPorDia(request));
 
         exception.Message.Should().Be("Data de referência não pode ser futura");
 
-        _mockTelemetriaService.Verify(
-            x => x.ObterTelemetriaPorDataAsync(It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()),
-            Times.Never);
+        _mockMediator.Verify(
+            x => x.Send(It.IsAny<ObterTelemetriaQuery>(), It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     [Fact]
@@ -116,21 +115,22 @@ public class TelemetriaControllerTests
     {
         // Arrange
         var dataPassada = DateOnly.FromDateTime(DateTime.Today.AddDays(-1));
+        var request = new TelemetriaRequest(dataPassada);
         
-        var telemetriaResult = new TelemetriaFinalResponseDTO(
+        var telemetriaResult = new TelemetriaResult(
             dataPassada,
-            new List<TelemetriaApiDTO>
+            new List<TelemetriaApiResult>
             {
                 new("Telemetria", 50, 100.0, 30L, 200L, 98.0)
             }
         );
 
-        _mockTelemetriaService
-            .Setup(x => x.ObterTelemetriaPorDataAsync(dataPassada, It.IsAny<CancellationToken>()))
+        _mockMediator
+            .Setup(x => x.Send(It.IsAny<ObterTelemetriaQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(telemetriaResult);
 
         // Act
-        var result = await _controller.ObterTelemetriaPorDia(dataPassada);
+        var result = await _controller.ObterTelemetriaPorDia(request);
 
         // Assert
         result.Should().NotBeNull();
@@ -143,8 +143,8 @@ public class TelemetriaControllerTests
         response!.DataReferencia.Should().Be(dataPassada);
         response.ListaEndpoints.Should().HaveCount(1);
 
-        _mockTelemetriaService.Verify(
-            x => x.ObterTelemetriaPorDataAsync(dataPassada, It.IsAny<CancellationToken>()),
+        _mockMediator.Verify(
+            x => x.Send(It.IsAny<ObterTelemetriaQuery>(), It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -153,26 +153,27 @@ public class TelemetriaControllerTests
     {
         // Arrange
         var dataReferencia = DateOnly.FromDateTime(DateTime.Today);
+        var request = new TelemetriaRequest(dataReferencia);
         var cancellationToken = new CancellationToken();
         
-        var telemetriaResult = new TelemetriaFinalResponseDTO(
+        var telemetriaResult = new TelemetriaResult(
             dataReferencia,
-            new List<TelemetriaApiDTO>
+            new List<TelemetriaApiResult>
             {
                 new("Test", 1, 50.0, 50L, 50L, 100.0)
             }
         );
 
-        _mockTelemetriaService
-            .Setup(x => x.ObterTelemetriaPorDataAsync(dataReferencia, cancellationToken))
+        _mockMediator
+            .Setup(x => x.Send(It.IsAny<ObterTelemetriaQuery>(), cancellationToken))
             .ReturnsAsync(telemetriaResult);
 
         // Act
-        await _controller.ObterTelemetriaPorDia(dataReferencia, cancellationToken);
+        await _controller.ObterTelemetriaPorDia(request, cancellationToken);
 
         // Assert
-        _mockTelemetriaService.Verify(
-            x => x.ObterTelemetriaPorDataAsync(dataReferencia, cancellationToken),
+        _mockMediator.Verify(
+            x => x.Send(It.IsAny<ObterTelemetriaQuery>(), cancellationToken),
             Times.Once);
     }
 
@@ -204,22 +205,23 @@ public class TelemetriaControllerTests
     {
         // Arrange
         var dataReferencia = DateOnly.FromDateTime(DateTime.Today);
+        var request = new TelemetriaRequest(dataReferencia);
         
-        var telemetriaResult = new TelemetriaFinalResponseDTO(
+        var telemetriaResult = new TelemetriaResult(
             dataReferencia,
-            new List<TelemetriaApiDTO>
+            new List<TelemetriaApiResult>
             {
                 new("Simulacao", 100, 150.5, 50L, 300L, 95.5),
                 new("Telemetria", 25, 75.0, 30L, 150L, 100.0)
             }
         );
 
-        _mockTelemetriaService
-            .Setup(x => x.ObterTelemetriaPorDataAsync(dataReferencia, It.IsAny<CancellationToken>()))
+        _mockMediator
+            .Setup(x => x.Send(It.IsAny<ObterTelemetriaQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(telemetriaResult);
 
         // Act
-        var result = await _controller.ObterTelemetriaPorDia(dataReferencia);
+        var result = await _controller.ObterTelemetriaPorDia(request);
 
         // Assert
         result.Should().NotBeNull();
@@ -233,8 +235,8 @@ public class TelemetriaControllerTests
         response.ListaEndpoints.Should().Contain(e => e.NomeApi == "Simulacao");
         response.ListaEndpoints.Should().Contain(e => e.NomeApi == "Telemetria");
 
-        _mockTelemetriaService.Verify(
-            x => x.ObterTelemetriaPorDataAsync(dataReferencia, It.IsAny<CancellationToken>()),
+        _mockMediator.Verify(
+            x => x.Send(It.IsAny<ObterTelemetriaQuery>(), It.IsAny<CancellationToken>()),
             Times.Once);
     }
 }

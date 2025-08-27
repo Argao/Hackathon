@@ -5,8 +5,8 @@ namespace Hackathon.Domain.ValueObjects;
 /// </summary>
 public readonly record struct PrazoMeses
 {
-    private const int PRAZO_MINIMO = 1;
-    private const int PRAZO_MAXIMO = 600; // 50 anos
+    private const int PRAZO_MINIMO = RegrasNegocio.Prazos.PRAZO_MINIMO_MESES;
+    private const int PRAZO_MAXIMO = RegrasNegocio.Prazos.PRAZO_MAXIMO_MESES;
     
     public int Meses { get; }
 

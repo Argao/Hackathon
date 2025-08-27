@@ -13,17 +13,17 @@ public static class ApplicationMappingProfile
 {
     public static void Configure()
     {
-        // Command to Entity mappings
-        TypeAdapterConfig<(RealizarSimulacaoCommand Command, Produto Produto), Simulacao>
-            .NewConfig()
-            .Map(dest => dest.CodigoProduto, src => src.Produto.Codigo)
-            .Map(dest => dest.DescricaoProduto, src => src.Produto.Descricao)
-            .Map(dest => dest.TaxaJuros, src => src.Produto.TaxaMensal)
-            .Map(dest => dest.PrazoMeses, src => (short)src.Command.Prazo)
-            .Map(dest => dest.ValorDesejado, src => ValorMonetario.Create(src.Command.Valor).Value)
-            .Map(dest => dest.DataReferencia, src => DateOnly.FromDateTime(DateTime.Today))
-            .Ignore(dest => dest.IdSimulacao)
-            .Ignore(dest => dest.Resultados);
+        // Command to Entity mappings - Removido pois agora usamos factory method
+        // TypeAdapterConfig<(RealizarSimulacaoCommand Command, Produto Produto), Simulacao>
+        //     .NewConfig()
+        //     .Map(dest => dest.CodigoProduto, src => src.Produto.Codigo)
+        //     .Map(dest => dest.DescricaoProduto, src => src.Produto.Descricao)
+        //     .Map(dest => dest.TaxaJuros, src => src.Produto.TaxaMensal)
+        //     .Map(dest => dest.PrazoMeses, src => (short)src.Command.Prazo)
+        //     .Map(dest => dest.ValorDesejado, src => ValorMonetario.Create(src.Command.Valor).Value)
+        //     .Map(dest => dest.DataReferencia, src => DateOnly.FromDateTime(DateTime.Today))
+        //     .Ignore(dest => dest.IdSimulacao)
+        //     .Ignore(dest => dest.Resultados);
 
         // Entity to Result mappings
         TypeAdapterConfig<Simulacao, SimulacaoResult>
@@ -38,14 +38,22 @@ public static class ApplicationMappingProfile
         TypeAdapterConfig<Parcela, ParcelaCalculada>
             .NewConfig();
 
-        // Volume Entity mappings
-        TypeAdapterConfig<VolumeSimuladoAgregado, VolumeSimuladoProdutoResult>
-            .NewConfig();
+        // Volume Entity mappings - Removido pois agora usamos DTO direto
 
         TypeAdapterConfig<Parcela, ParcelaCalculada>
             .NewConfig()
             .Map(dest => dest.ValorAmortizacao, src => src.ValorAmortizacao.Valor)
             .Map(dest => dest.ValorJuros, src => src.ValorJuros.Valor)
             .Map(dest => dest.ValorPrestacao, src => src.ValorPrestacao.Valor);
+
+        // Adicionar mapeamento para SimulacaoResumoResult
+        TypeAdapterConfig<Simulacao, SimulacaoResumoResult>
+            .NewConfig()
+            .Map(dest => dest.Id, src => src.IdSimulacao)
+            .Map(dest => dest.ValorDesejado, src => src.ValorDesejado.Valor)
+            .Map(dest => dest.Prazo, src => (int)src.PrazoMeses)
+            .Map(dest => dest.ValorTotalParcelas, src => 
+                src.Resultados.SelectMany(r => r.Parcelas ?? Enumerable.Empty<Parcela>())
+                    .Sum(p => p.ValorPrestacao.Valor));
     }
 }

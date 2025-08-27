@@ -49,24 +49,24 @@ public class ISimulacaoRepositoryTests
 
         // Assert
         metodo.Should().NotBeNull();
-        metodo!.ReturnType.Should().Be(typeof(Task<IEnumerable<VolumeSimuladoAgregado>>));
+        metodo!.ReturnType.Should().Be(typeof(Task<IEnumerable<VolumeSimuladoProdutoDto>>));
         metodo.IsPublic.Should().BeTrue();
         metodo.IsVirtual.Should().BeTrue();
         metodo.IsAbstract.Should().BeTrue();
     }
 
     [Fact]
-    public void ISimulacaoRepository_DeveTerMetodoListarPaginadoAsync()
+    public void ISimulacaoRepository_DeveTerMetodoListarSimulacoesOtimizadoAsync()
     {
         // Arrange
         var tipo = typeof(ISimulacaoRepository);
 
         // Act
-        var metodo = tipo.GetMethod("ListarPaginadoAsync");
+        var metodo = tipo.GetMethod("ListarSimulacoesOtimizadoAsync");
 
         // Assert
         metodo.Should().NotBeNull();
-        metodo!.ReturnType.Should().Be(typeof(Task<(IEnumerable<Simulacao> Data, int TotalRecords)>));
+        metodo!.ReturnType.Should().Be(typeof(Task<IEnumerable<SimulacaoResumoDto>>));
         metodo.IsPublic.Should().BeTrue();
         metodo.IsVirtual.Should().BeTrue();
         metodo.IsAbstract.Should().BeTrue();
@@ -84,23 +84,6 @@ public class ISimulacaoRepositoryTests
         // Assert
         metodo.Should().NotBeNull();
         metodo!.ReturnType.Should().Be(typeof(Task<int>));
-        metodo.IsPublic.Should().BeTrue();
-        metodo.IsVirtual.Should().BeTrue();
-        metodo.IsAbstract.Should().BeTrue();
-    }
-
-    [Fact]
-    public void ISimulacaoRepository_DeveTerMetodoListarSimulacoesAsync()
-    {
-        // Arrange
-        var tipo = typeof(ISimulacaoRepository);
-
-        // Act
-        var metodo = tipo.GetMethod("ListarSimulacoesAsync");
-
-        // Assert
-        metodo.Should().NotBeNull();
-        metodo!.ReturnType.Should().Be(typeof(Task<IEnumerable<Simulacao>>));
         metodo.IsPublic.Should().BeTrue();
         metodo.IsVirtual.Should().BeTrue();
         metodo.IsAbstract.Should().BeTrue();
@@ -143,11 +126,11 @@ public class ISimulacaoRepositoryTests
     }
 
     [Fact]
-    public void ISimulacaoRepository_DeveTerParametrosCorretosNoMetodoListarPaginadoAsync()
+    public void ISimulacaoRepository_DeveTerParametrosCorretosNoMetodoListarSimulacoesOtimizadoAsync()
     {
         // Arrange
         var tipo = typeof(ISimulacaoRepository);
-        var metodo = tipo.GetMethod("ListarPaginadoAsync");
+        var metodo = tipo.GetMethod("ListarSimulacoesOtimizadoAsync");
 
         // Act
         var parametros = metodo!.GetParameters();
@@ -179,26 +162,6 @@ public class ISimulacaoRepositoryTests
     }
 
     [Fact]
-    public void ISimulacaoRepository_DeveTerParametrosCorretosNoMetodoListarSimulacoesAsync()
-    {
-        // Arrange
-        var tipo = typeof(ISimulacaoRepository);
-        var metodo = tipo.GetMethod("ListarSimulacoesAsync");
-
-        // Act
-        var parametros = metodo!.GetParameters();
-
-        // Assert
-        parametros.Should().HaveCount(3);
-        parametros[0].ParameterType.Should().Be(typeof(int));
-        parametros[0].Name.Should().Be("pageNumber");
-        parametros[1].ParameterType.Should().Be(typeof(int));
-        parametros[1].Name.Should().Be("pageSize");
-        parametros[2].ParameterType.Should().Be(typeof(CancellationToken));
-        parametros[2].Name.Should().Be("ct");
-    }
-
-    [Fact]
     public void ISimulacaoRepository_DeveTerNamespaceCorreto()
     {
         // Act & Assert
@@ -224,7 +187,7 @@ public class ISimulacaoRepositoryTests
     }
 
     [Fact]
-    public void ISimulacaoRepository_DeveTerCincoMetodos()
+    public void ISimulacaoRepository_DeveTerQuatroMetodos()
     {
         // Arrange
         var tipo = typeof(ISimulacaoRepository);
@@ -233,6 +196,6 @@ public class ISimulacaoRepositoryTests
         var metodos = tipo.GetMethods();
 
         // Assert
-        metodos.Should().HaveCount(5);
+        metodos.Should().HaveCount(4);
     }
 }

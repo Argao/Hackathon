@@ -5,8 +5,8 @@ namespace Hackathon.Domain.ValueObjects;
 /// </summary>
 public readonly record struct ValorMonetario
 {
-    private const decimal VALOR_MINIMO = 0.00m;
-    private const decimal VALOR_MAXIMO = 999_999_999_999.99m;
+    private const decimal VALOR_MINIMO = RegrasNegocio.Valores.VALOR_MINIMO_MONETARIO;
+    private const decimal VALOR_MAXIMO = RegrasNegocio.Valores.VALOR_MAXIMO_MONETARIO;
     
     public decimal Valor { get; }
 

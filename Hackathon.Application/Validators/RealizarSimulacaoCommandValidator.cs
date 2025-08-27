@@ -1,11 +1,9 @@
 using FluentValidation;
 using Hackathon.Application.Commands;
+using Hackathon.Domain.ValueObjects;
 
 namespace Hackathon.Application.Validators;
 
-/// <summary>
-/// Validator para o comando de realizar simulação
-/// </summary>
 public class RealizarSimulacaoCommandValidator : AbstractValidator<RealizarSimulacaoCommand>
 {
     public RealizarSimulacaoCommandValidator()
@@ -13,13 +11,13 @@ public class RealizarSimulacaoCommandValidator : AbstractValidator<RealizarSimul
         RuleFor(x => x.Valor)
             .GreaterThan(0)
             .WithMessage("Valor deve ser maior que zero")
-            .LessThanOrEqualTo(999_999_999.99m)
-            .WithMessage("Valor não pode exceder R$ 999.999.999,99");
+            .LessThanOrEqualTo(RegrasNegocio.Valores.VALOR_MAXIMO_EMPRESTIMO)
+            .WithMessage($"Valor não pode exceder {RegrasNegocio.Valores.VALOR_MAXIMO_EMPRESTIMO:C}");
 
         RuleFor(x => x.Prazo)
             .GreaterThan(0)
             .WithMessage("Prazo deve ser maior que zero")
-            .LessThanOrEqualTo(600)
-            .WithMessage("Prazo não pode exceder 600 meses (50 anos)");
+            .LessThanOrEqualTo(RegrasNegocio.Prazos.PRAZO_MAXIMO_MESES)
+            .WithMessage($"Prazo não pode exceder {RegrasNegocio.Prazos.PRAZO_MAXIMO_MESES} meses");
     }
 }

@@ -5,8 +5,8 @@ namespace Hackathon.Domain.ValueObjects;
 /// </summary>
 public readonly record struct ValorEmprestimo
 {
-    private const decimal VALOR_MINIMO = 0.01m;
-    private const decimal VALOR_MAXIMO = 999_999_999.99m;
+    private const decimal VALOR_MINIMO = RegrasNegocio.Valores.VALOR_MINIMO_EMPRESTIMO;
+    private const decimal VALOR_MAXIMO = RegrasNegocio.Valores.VALOR_MAXIMO_EMPRESTIMO;
     
     public decimal Valor { get; }
 

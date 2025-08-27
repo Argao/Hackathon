@@ -146,7 +146,7 @@ namespace Hackathon.Infrastructure.Migrations
                         .HasColumnType("text")
                         .HasColumnName("TX_ENVELOP_JSON");
 
-                    b.Property<short>("PrazoMeses")
+                    b.Property<int>("PrazoMeses")
                         .HasColumnType("INTEGER")
                         .HasColumnName("NU_PRAZO_MESES");
 
@@ -165,6 +165,15 @@ namespace Hackathon.Infrastructure.Migrations
 
                     b.HasIndex("DataReferencia")
                         .HasDatabaseName("IX_SIMULACAO_DT_REFERENCIA");
+
+                    b.HasIndex("CodigoProduto", "DataReferencia")
+                        .HasDatabaseName("IX_SIMULACAO_PRODUTO_DATA");
+
+                    b.HasIndex("DataReferencia", "CodigoProduto")
+                        .HasDatabaseName("IX_SIMULACAO_DATA_PRODUTO");
+
+                    b.HasIndex("DataReferencia", "IdSimulacao")
+                        .HasDatabaseName("IX_SIMULACAO_DATA_ID_COMPOSTO");
 
                     b.ToTable("SIMULACAO", (string)null);
                 });
