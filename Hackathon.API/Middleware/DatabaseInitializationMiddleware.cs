@@ -1,4 +1,4 @@
-using Hackathon.Infrastructure.Services;
+using Hackathon.Infrastructure.Interfaces;
 
 namespace Hackathon.API.Middleware;
 
@@ -48,7 +48,7 @@ public class DatabaseInitializationMiddleware
     private async Task InitializeDatabaseAsync()
     {
         using var scope = _serviceProvider.CreateScope();
-        var dbInitializer = scope.ServiceProvider.GetRequiredService<DatabaseInitializationService>();
+        var dbInitializer = scope.ServiceProvider.GetRequiredService<IDatabaseInitializationService>();
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<DatabaseInitializationMiddleware>>();
         
         try

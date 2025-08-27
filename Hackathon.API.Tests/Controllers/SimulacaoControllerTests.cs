@@ -2,6 +2,7 @@ using FluentAssertions;
 using Hackathon.API.Controllers;
 using Hackathon.API.Contracts.Requests;
 using Hackathon.API.Contracts.Responses;
+using Hackathon.API.Mappings;
 using Hackathon.Application.Commands;
 using Hackathon.Application.Interfaces;
 using Hackathon.Application.Queries;
@@ -10,6 +11,7 @@ using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
+using Mapster;
 
 namespace Hackathon.API.Tests.Controllers;
 
@@ -20,6 +22,10 @@ public class SimulacaoControllerTests
 
     public SimulacaoControllerTests()
     {
+        // Configurar o Mapster antes de cada teste
+        ApiMappingProfile.Configure();
+        TypeAdapterConfig.GlobalSettings.Compile();
+        
         _mockMediator = new Mock<IMediator>();
         _controller = new SimulacaoController(_mockMediator.Object);
     }
@@ -29,9 +35,10 @@ public class SimulacaoControllerTests
     {
         // Arrange
         var request = new SimulacaoRequest(10000, 12);
+        var simulacaoId = Guid.NewGuid();
 
         var simulacaoResult = new SimulacaoResult(
-            Guid.NewGuid(),
+            simulacaoId,
             1,
             "Produto Teste",
             0.05m,
@@ -57,7 +64,7 @@ public class SimulacaoControllerTests
         okResult!.Value.Should().BeOfType<SimulacaoResponse>();
         
         var response = okResult.Value as SimulacaoResponse;
-        response!.IdSimulacao.Should().Be(simulacaoResult.Id);
+        response!.IdSimulacao.Should().Be(simulacaoId);
         response.ResultadoSimulacao.Should().HaveCount(2);
 
         _mockMediator.Verify(
@@ -97,10 +104,10 @@ public class SimulacaoControllerTests
         okResult!.Value.Should().BeOfType<ListarSimulacoesResponse>();
         
         var response = okResult.Value as ListarSimulacoesResponse;
-        response!.Pagina.Should().Be(1);
-        response.QtdRegistros.Should().Be(5);
-        response.QtdRegistrosPagina.Should().Be(10);
-        response.Registros.Should().HaveCount(2);
+        response!.Pagina.Should().Be(pagedResult.CurrentPage);
+        response.QtdRegistros.Should().Be(pagedResult.TotalItems);
+        response.QtdRegistrosPagina.Should().Be(pagedResult.PageSize);
+        response.Registros.Should().HaveCount(pagedResult.Items.Count());
 
         _mockMediator.Verify(
             x => x.Send(It.IsAny<ListarSimulacoesQuery>(), It.IsAny<CancellationToken>()),

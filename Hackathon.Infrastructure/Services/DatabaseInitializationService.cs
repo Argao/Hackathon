@@ -1,4 +1,5 @@
 using Hackathon.Infrastructure.Context;
+using Hackathon.Infrastructure.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -7,7 +8,7 @@ namespace Hackathon.Infrastructure.Services;
 /// <summary>
 /// Serviço responsável por inicializar o banco de dados e aplicar migrations
 /// </summary>
-public class DatabaseInitializationService
+public class DatabaseInitializationService : IDatabaseInitializationService
 {
     private readonly AppDbContext _context;
     private readonly ILogger<DatabaseInitializationService> _logger;

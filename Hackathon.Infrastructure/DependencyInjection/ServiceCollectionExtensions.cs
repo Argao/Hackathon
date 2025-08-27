@@ -9,6 +9,7 @@ using Hackathon.Infrastructure.Context;
 using Hackathon.Infrastructure.EventHub;
 using Hackathon.Infrastructure.Repositories;
 using Hackathon.Infrastructure.Services;
+using Hackathon.Infrastructure.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -102,7 +103,7 @@ public static class ServiceCollectionExtensions
         services.AddHostedService<WarmupService>();
 
         // Database Initialization Service
-        services.AddScoped<DatabaseInitializationService>();
+        services.AddScoped<IDatabaseInitializationService, DatabaseInitializationService>();
 
         // Adicionar serviços da camada de aplicação (incluindo validadores)
         services.AddApplicationServices();
