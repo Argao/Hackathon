@@ -34,7 +34,7 @@ public class MetricaRepository : IMetricaRepository
         catch (Exception ex)
         {
             // Log do erro mas NÃO propaga exceção (fire-and-forget)
-
+            _logger.LogError(ex, "Erro ao salvar métrica");
         }
     }
 

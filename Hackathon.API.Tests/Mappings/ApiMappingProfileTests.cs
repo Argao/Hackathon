@@ -126,7 +126,11 @@ public class ApiMappingProfileTests
         var pagedResult = new PagedResult<SimulacaoResumoResult>(
             new List<SimulacaoResumoResult>
             {
-                new(Guid.NewGuid(), 10000, 12, 12000)
+                new(Guid.NewGuid(), 10000, 12, new List<ValorTotalAmortizacaoResult>
+                {
+                    new("SAC", 12000),
+                    new("PRICE", 12500)
+                })
             },
             25,
             2,
@@ -149,7 +153,11 @@ public class ApiMappingProfileTests
     {
         // Arrange
         var simulacaoId = Guid.NewGuid();
-        var resumo = new SimulacaoResumoResult(simulacaoId, 15000, 24, 18000);
+        var resumo = new SimulacaoResumoResult(simulacaoId, 15000, 24, new List<ValorTotalAmortizacaoResult>
+        {
+            new("SAC", 18000),
+            new("PRICE", 18500)
+        });
 
         // Act
         var response = resumo.Adapt<SimulacaoResumoResponse>();
@@ -159,7 +167,11 @@ public class ApiMappingProfileTests
         response.IdSimulacao.Should().Be(simulacaoId);
         response.ValorDesejado.Should().Be(15000);
         response.Prazo.Should().Be(24);
-        response.ValorTotalParcelas.Should().Be(18000);
+        response.ValorTotalParcelas.Should().HaveCount(2);
+        response.ValorTotalParcelas[0].TipoAmortizacao.Should().Be("SAC");
+        response.ValorTotalParcelas[0].ValorTotal.Should().Be(18000);
+        response.ValorTotalParcelas[1].TipoAmortizacao.Should().Be("PRICE");
+        response.ValorTotalParcelas[1].ValorTotal.Should().Be(18500);
     }
 
     [Fact]

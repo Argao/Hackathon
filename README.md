@@ -1,5 +1,26 @@
 # API de Simulação de Crédito - Hackathon CAIXA
 
+[![.NET 8.0](https://img.shields.io/badge/.NET-8.0-blue.svg)](https://dotnet.microsoft.com/download/dotnet/8.0)
+[![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://www.docker.com/)
+[![Swagger](https://img.shields.io/badge/Swagger-Documentation-green.svg)](http://localhost:5000/swagger)
+[![Health Check](https://img.shields.io/badge/Health%20Check-Available-green.svg)](http://localhost:5000/health)
+
+## 📋 Índice
+
+- [🎯 O Problema](#-o-problema-que-resolve)
+- [💡 Solução Proposta](#-solução-proposta)
+- [📋 Pré-requisitos](#-pré-requisitos)
+- [🔧 Configuração](#-configuração)
+- [🚀 Execução Rápida](#-execução-rápida)
+- [🏗️ Arquitetura](#️-arquitetura)
+- [📡 Endpoints da API](#-endpoints-da-api)
+- [🗄️ Banco de Dados](#️-banco-de-dados)
+- [📡 Integração EventHub](#-integração-eventhub)
+- [🧪 Testes](#-testes)
+- [📊 Health Checks](#-health-checks)
+- [📈 Impacto Real](#-impacto-real)
+- [🎯 Próximos Passos](#-próximos-passos)
+
 ## 🎯 O Problema que Resolve
 
 Imagine que você é um microempreendedor como o Lucas, que precisa investir em novos equipamentos para sua pequena empresa. Você quer saber exatamente quanto vai pagar por mês, mas enfrenta alguns desafios:
@@ -20,57 +41,125 @@ A solução é uma **API inteligente** que permite que **qualquer pessoa ou sist
 
 1. **Recebe uma solicitação simples**: valor desejado e prazo
 2. **Consulta produtos disponíveis**: automaticamente encontra o produto adequado
-3. **Calcula múltiplas opções**: Atualmente SAC (amortização constante) e PRICE (prestação fixa), com arquitetura preparada para futuros métodos de amortização
+3. **Calcula múltiplas opções**: SAC (amortização constante) e PRICE (prestação fixa)
 4. **Mostra tudo transparentemente**: valor da parcela, juros, amortização mês a mês
 5. **Envia para área comercial**: Eventos enviados para Azure EventHub em tempo real
 6. **Mantém histórico**: para análise e melhorias futuras
 
-## 🚀 Como Funciona na Prática
+## 📋 Pré-requisitos
 
-### Para o Cliente Final
+### Requisitos do Sistema
+- **.NET 8.0 SDK** (versão exata: 8.0.0)
+- **Docker** e **Docker Compose**
+- **SQL Server** (Azure SQL Database configurado)
+- **Azure EventHub** (configurado)
 
-**Antes**: 
-- Ir até agência bancária
-- Aguardar atendimento (às vezes horas)
-- Receber apenas uma opção
-- Não entender os cálculos
-- Tomar decisões sem informação completa
+### Ferramentas Recomendadas
+- **Visual Studio 2022** ou **Rider**
+- **Postman** ou **Insomnia** para testes da API
+- **Azure Data Studio** ou **SQL Server Management Studio**
 
-**Agora**:
-- Acessar de qualquer lugar, 24h por dia
-- Receber resposta de forma ágil
-- Ver múltiplas opções de pagamento lado a lado (SAC e PRICE)
-- Entender exatamente quanto paga de juros
-- Tomar decisões informadas e confiantes
+## 🔧 Configuração
 
-### Para a CAIXA
+### Variáveis de Ambiente Necessárias
 
-**Antes**:
-- Clientes chegavam sem informação prévia
-- Processo manual demorado e propenso a erros
-- Dificuldade para oferecer produtos adequados
-- Perda de oportunidades comerciais
+```bash
+# Banco de Dados SQL Server (Azure)
+ConnectionStrings__ProdutosDb=Server=dbhackathon.database.windows.net,1433;Database=hack;User ID=hack;Password=Password23;Encrypt=True;TrustServerCertificate=True;MultipleActiveResultSets=True;Connection Timeout=30;
 
-**Agora**:
-- Clientes já chegam informados e preparados
-- Processo automatizado, rápido e preciso
-- Área comercial recebe dados em tempo real para estratégias
-- Oportunidades de negócio identificadas automaticamente
+# Banco Local SQLite (para desenvolvimento)
+ConnectionStrings__LocalDb=Data Source=./data/hack.db
 
-## 📱 Como Usar
+# Azure EventHub
+ConnectionStrings__EventHub=Endpoint=sb://eventhack.servicebus.windows.net/;SharedAccessKeyName=hack;SharedAccessKey=HeHeVaVqyVkntO2FnjQcs2Ilh/4MUDo4y+AEhKp8z+g=;EntityPath=simulacoes
+```
 
-### Simulação Básica
+### Configuração do Ambiente
 
-```json
+As variáveis de ambiente já estão configuradas no `docker-compose.yml` e `appsettings.json`. Para execução local, certifique-se de que o arquivo `appsettings.Development.json` existe com as configurações adequadas.
+
+## 🚀 Execução Rápida
+
+### Opção 1: Usando Scripts (Recomendado)
+
+```bash
+# Desenvolvimento
+./scripts/docker.sh dev
+
+# Produção
+./scripts/docker.sh prod
+
+# Parar serviços
+./scripts/docker.sh stop
+```
+
+### Opção 2: Usando Docker Compose
+
+```bash
+# Desenvolvimento
+docker-compose --profile dev up --build
+
+# Produção
+docker-compose --profile prod up --build
+```
+
+### Opção 3: Execução Local
+
+```bash
+# Pré-requisitos
+- .NET 8.0 SDK
+
+# Executar
+cd Hackathon.API
+dotnet run
+```
+
+### Acessar Documentação Interativa
+
+```
+http://localhost:5000/swagger
+```
+
+A documentação Swagger permite testar todos os endpoints diretamente no navegador.
+
+## 🏗️ Arquitetura
+
+### Estrutura de Camadas
+- **Hackathon.API**: Controllers, Middleware, Mappings
+- **Hackathon.Application**: Commands, Queries, Handlers, Services
+- **Hackathon.Domain**: Entities, ValueObjects, Interfaces
+- **Hackathon.Infrastructure**: Context, Repositories, EventHub
+
+### Padrões Utilizados
+- **CQRS** com MediatR
+- **Clean Architecture**
+- **Repository Pattern**
+- **Value Objects**
+- **Domain-Driven Design**
+
+### Benefícios da Arquitetura
+- **Separação de responsabilidades**: Cada parte do sistema tem uma função específica
+- **Testabilidade**: Fácil de testar cada camada isoladamente
+- **Manutenibilidade**: Código organizado e bem estruturado
+- **Escalabilidade**: Preparado para crescimento futuro
+
+## 📡 Endpoints da API
+
+### Simulação
+```http
 POST /simulacao
+```
+Realiza simulação completa com múltiplos métodos de amortização (SAC e PRICE)
+
+**Exemplo de Request:**
+```json
 {
     "valorDesejado": 5000.00,
     "prazo": 12
 }
 ```
 
-### Resposta Completa e Transparente
-
+**Exemplo de Response:**
 ```json
 {
     "idSimulacao": 20250130001,
@@ -86,14 +175,7 @@ POST /simulacao
                     "valorAmortizacao": 416.67,
                     "valorJuros": 87.50,
                     "valorPrestacao": 504.17
-                },
-                {
-                    "numero": 2,
-                    "valorAmortizacao": 416.67,
-                    "valorJuros": 79.17,
-                    "valorPrestacao": 495.84
                 }
-                // ... mais parcelas com detalhamento completo
             ]
         },
         {
@@ -104,120 +186,12 @@ POST /simulacao
                     "valorAmortizacao": 400.00,
                     "valorJuros": 87.50,
                     "valorPrestacao": 487.50
-                },
-                {
-                    "numero": 2,
-                    "valorAmortizacao": 406.00,
-                    "valorJuros": 81.50,
-                    "valorPrestacao": 487.50
                 }
-                // ... mais parcelas com prestação fixa
             ]
         }
     ]
 }
 ```
-
-## 🏗️ Arquitetura Simples e Robusta
-
-### Por que esta abordagem foi escolhida:
-
-1. **Separação de responsabilidades**: Cada parte do sistema tem uma função específica e bem definida
-2. **Cache inteligente**: Produtos são consultados de forma ágil, sem demora para o usuário
-3. **Processamento assíncrono**: Eventos são enviados para Azure EventHub sem atrasar a resposta ao cliente
-4. **Monitoramento automático**: Sabemos sempre como o sistema está funcionando
-5. **Escalabilidade**: Pode atender milhões de usuários simultaneamente
-
-### Benefícios para o usuário:
-
-- **Resposta rápida**: Simulações processadas de forma ágil
-- **Sempre disponível**: Sistema funciona 24h por dia, 7 dias por semana
-- **Escalável**: Atende milhões de usuários simultaneamente
-- **Confiável**: Falhas são tratadas automaticamente
-- **Transparente**: Todos os cálculos são visíveis e compreensíveis
-
-## 📊 Impacto Real
-
-### Para o Cliente
-- **Transparência total**: Sabe exatamente quanto vai pagar de juros e amortização
-- **Comparação fácil**: Vê múltiplas opções de amortização lado a lado (SAC e PRICE) com detalhamento completo
-- **Decisão informada**: Escolhe a melhor opção para seu perfil financeiro
-- **Economia de tempo**: Não precisa ir até agência ou aguardar atendimento
-- **Confiança**: Entende completamente o que está contratando
-
-### Para a CAIXA
-- **Atendimento eficiente**: Clientes já chegam informados e preparados
-- **Oportunidades comerciais**: Recebe dados em tempo real via EventHub para estratégias
-- **Redução de custos**: Processo automatizado reduz necessidade de atendimento manual
-- **Inclusão financeira**: Democratiza acesso ao crédito para todos os brasileiros
-- **Dados valiosos**: Histórico de simulações para análise de comportamento
-
-### Para o Sistema Financeiro
-- **Padrão de transparência**: Mostra como APIs bancárias devem funcionar
-- **Integração fácil**: Outros sistemas podem usar a API sem dificuldades
-- **Dados estruturados**: Informações organizadas para análise e tomada de decisão
-- **Inovação**: Abre caminho para novos produtos e serviços digitais
-- **Integração com EventHub**: Permite integração com sistemas de relacionamento e CRM
-
-## 🛠️ Como Executar
-
-### Opção 1: Docker (Recomendado)
-
-```bash
-# Desenvolvimento
-docker-compose --profile dev up --build
-
-# Produção  
-docker-compose --profile prod up --build
-```
-
-### Opção 2: Execução Local
-
-```bash
-# Pré-requisitos
-- .NET 8.0 SDK
-
-# Executar
-cd Hackathon.API
-dotnet run
-```
-
-### Executar Testes
-
-```bash
-# Todos os testes
-dotnet test
-
-# Testes específicos
-dotnet test Hackathon.API.Tests
-dotnet test Hackathon.Application.Tests
-dotnet test Hackathon.Domain.Tests
-dotnet test Hackathon.Infrastructure.Tests
-```
-
-### Acessar Documentação Interativa
-
-```
-http://localhost:5000/swagger
-```
-
-A documentação Swagger permite testar todos os endpoints diretamente no navegador, facilitando o entendimento e uso da API.
-
-## 📈 Métricas de Sucesso
-
-- **Tempo de resposta**: Processamento ágil de simulações
-- **Disponibilidade**: Alta disponibilidade e confiabilidade
-- **Cobertura de testes**: Cobertura abrangente de testes em todas as camadas
-- **Documentação**: Documentação completa de todos os endpoints
-- **Escalabilidade**: Suporte a alto volume de requisições simultâneas
-
-## 🔍 Endpoints Principais
-
-### Simulação de Crédito
-```http
-POST /simulacao
-```
-Realiza simulação completa com múltiplos métodos de amortização (SAC e PRICE)
 
 ### Histórico de Simulações
 ```http
@@ -237,6 +211,148 @@ GET /telemetria/por-dia?dataReferencia=2025-01-30
 ```
 Métricas de performance e uso da API
 
+### Health Checks
+```http
+GET /health
+GET /telemetria/health
+```
+Verificação de saúde dos serviços
+
+## 🗄️ Banco de Dados
+
+### Migrações Disponíveis
+- **19 migrações** implementadas
+- Schema otimizado com índices de performance
+- Suporte a SQL Server (Azure) e SQLite (local)
+
+### Executar Migrações
+
+```bash
+# Desenvolvimento (SQLite)
+dotnet ef database update --project Hackathon.Infrastructure
+
+# Produção (SQL Server)
+dotnet ef database update --project Hackathon.Infrastructure --connection "Server=dbhackathon.database.windows.net,1433;Database=hack;User ID=hack;Password=Password23;Encrypt=True;TrustServerCertificate=True;MultipleActiveResultSets=True;Connection Timeout=30;"
+```
+
+### Estrutura das Tabelas
+
+#### Tabela PRODUTO (SQL Server Azure)
+```sql
+CREATE TABLE dbo.PRODUTO (
+    CO_PRODUTO int NOT NULL primary key,
+    NO_PRODUTO varchar(200) NOT NULL,
+    PC_TAXA_JUROS numeric(10, 9) NOT NULL,
+    NU_MINIMO_MESES smallint NOT NULL,
+    NU_MAXIMO_MESES smallint NULL,
+    VR_MINIMO numeric(18, 2) NOT NULL,
+    VR_MAXIMO numeric(18, 2) NULL
+);
+```
+
+#### Tabelas Locais (SQLite)
+- **SIMULACAO**: Dados das simulações realizadas
+- **RESULTADO_SIMULACAO**: Resultados detalhados
+- **PARCELA**: Parcelas de cada simulação
+- **METRICA_REQUISICAO**: Métricas de telemetria
+
+## 📡 Integração EventHub
+
+### Funcionalidades
+- **Envio assíncrono** de simulações
+- **Retry automático** com backoff exponencial
+- **Compressão de dados** para performance
+- **Logs detalhados** de eventos
+
+### Configuração
+- **Endpoint**: `sb://eventhack.servicebus.windows.net/`
+- **Entity**: `simulacoes`
+- **Shared Access Key** configurada
+
+### Eventos Enviados
+```json
+{
+    "EventType": "SimulacaoRealizada",
+    "Timestamp": "2025-01-30T10:30:00Z",
+    "Source": "HackathonAPI",
+    "Data": {
+        "idSimulacao": 20250130001,
+        "valorDesejado": 5000.00,
+        "prazo": 12
+    }
+}
+```
+
+## 🧪 Testes
+
+### Executar Todos os Testes
+```bash
+dotnet test
+```
+
+### Executar Testes por Camada
+```bash
+dotnet test Hackathon.API.Tests
+dotnet test Hackathon.Application.Tests
+dotnet test Hackathon.Domain.Tests
+dotnet test Hackathon.Infrastructure.Tests
+```
+
+### Cobertura de Código
+- **Coverlet** configurado para cobertura
+- **FluentAssertions** para assertions
+- **Moq** para mocking
+- **xUnit** como framework de testes
+
+### Estrutura de Testes
+- **Testes Unitários**: Cada camada isoladamente
+- **Testes de Integração**: API e banco de dados
+- **Testes de Comportamento**: Cenários de negócio
+
+## 📊 Health Checks
+
+### Endpoints Disponíveis
+- `GET /health` - Health check geral da aplicação
+- `GET /telemetria/health` - Health check específico da telemetria
+
+### Configuração Docker
+- Health checks configurados no docker-compose
+- **Intervalo**: 30s
+- **Timeout**: 10s
+- **Retries**: 3
+
+### Exemplo de Response
+```json
+{
+    "service": "Telemetria",
+    "status": "healthy",
+    "timestamp": "2025-01-30T10:30:00Z",
+    "version": "1.0.0"
+}
+```
+
+## 📈 Impacto Real
+
+### Para o Cliente
+- **Transparência total**: Sabe exatamente quanto vai pagar de juros e amortização
+- **Comparação fácil**: Vê múltiplas opções de amortização lado a lado
+- **Decisão informada**: Escolhe a melhor opção para seu perfil financeiro
+- **Economia de tempo**: Não precisa ir até agência ou aguardar atendimento
+- **Confiança**: Entende completamente o que está contratando
+
+### Para a CAIXA
+- **Atendimento eficiente**: Clientes já chegam informados e preparados
+- **Oportunidades comerciais**: Recebe dados em tempo real via EventHub
+- **Redução de custos**: Processo automatizado reduz necessidade de atendimento manual
+- **Inclusão financeira**: Democratiza acesso ao crédito para todos os brasileiros
+- **Dados valiosos**: Histórico de simulações para análise de comportamento
+
+### Para o Sistema Financeiro
+- **Padrão de transparência**: Mostra como APIs bancárias devem funcionar
+- **Integração fácil**: Outros sistemas podem usar a API sem dificuldades
+- **Dados estruturados**: Informações organizadas para análise e tomada de decisão
+- **Inovação**: Abre caminho para novos produtos e serviços digitais
+
 ## 🎯 Próximos Passos
 
 Esta API é apenas o começo de uma transformação digital maior. Com ela, podemos:
@@ -250,11 +366,11 @@ Esta API é apenas o começo de uma transformação digital maior. Com ela, pode
 7. **Chatbot inteligente**: Para tirar dúvidas sobre simulações
 8. **Expansão do EventHub**: Integração com mais sistemas de relacionamento e CRM
 
-## 🌟 Diferenciais da Solução Proposta
+## 🌟 Diferenciais da Solução
 
 ### Transparência Total
 - Todos os cálculos são visíveis e compreensíveis
-- Comparação lado a lado entre múltiplos métodos de amortização (SAC e PRICE)
+- Comparação lado a lado entre múltiplos métodos de amortização
 - Detalhamento mês a mês de juros e amortização
 - Arquitetura extensível para novos métodos de cálculo
 

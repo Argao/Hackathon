@@ -81,8 +81,16 @@ public class SimulacaoControllerTests
         var pagedResult = new PagedResult<SimulacaoResumoResult>(
             new List<SimulacaoResumoResult>
             {
-                new(Guid.NewGuid(), 10000, 12, 12000),
-                new(Guid.NewGuid(), 15000, 24, 18000)
+                new(Guid.NewGuid(), 10000, 12, new List<ValorTotalAmortizacaoResult>
+                {
+                    new("SAC", 12000),
+                    new("PRICE", 12500)
+                }),
+                new(Guid.NewGuid(), 15000, 24, new List<ValorTotalAmortizacaoResult>
+                {
+                    new("SAC", 18000),
+                    new("PRICE", 18500)
+                })
             },
             5,
             1,

@@ -26,7 +26,11 @@ public class ListarSimulacoesHandlerTests
 
         var simulacoesDto = new List<SimulacaoResumoDto>
         {
-            new(Guid.NewGuid(), 10000m, 12, 12000m)
+            new(Guid.NewGuid(), 10000m, 12, new List<ValorTotalAmortizacaoDto>
+            {
+                new("SAC", 12000m),
+                new("PRICE", 12500m)
+            })
         };
 
         _mockRepository
@@ -142,7 +146,11 @@ public class ListarSimulacoesHandlerTests
 
         var simulacoesDto = new List<SimulacaoResumoDto>
         {
-            new(Guid.NewGuid(), 10000m, 12, 12000m)
+            new(Guid.NewGuid(), 10000m, 12, new List<ValorTotalAmortizacaoDto>
+            {
+                new("SAC", 12000m),
+                new("PRICE", 12500m)
+            })
         };
 
         _mockRepository

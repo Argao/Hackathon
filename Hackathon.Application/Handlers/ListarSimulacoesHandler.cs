@@ -37,7 +37,8 @@ public class ListarSimulacoesHandler : IRequestHandler<ListarSimulacoesQuery, Pa
             Id: s.Id,
             ValorDesejado: s.ValorDesejado,
             Prazo: s.Prazo,
-            ValorTotalParcelas: s.ValorTotalParcelas
+            ValorTotalParcelas: s.ValorTotalParcelas.Select(v => 
+                new ValorTotalAmortizacaoResult(v.TipoAmortizacao, v.ValorTotal)).ToList()
         )).ToList();
 
         return new PagedResult<SimulacaoResumoResult>(

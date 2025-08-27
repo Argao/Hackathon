@@ -53,5 +53,13 @@ public sealed record SimulacaoResumoResponse(
     int Prazo,
     
     [property: JsonPropertyName("valorTotalParcelas")]
-    decimal ValorTotalParcelas
+    IReadOnlyList<ValorTotalAmortizacaoResponse> ValorTotalParcelas
+);
+
+public sealed record ValorTotalAmortizacaoResponse(
+    [property: JsonPropertyName("tipoAmortizacao")]
+    string TipoAmortizacao,
+    
+    [property: JsonPropertyName("valorTotal")]
+    decimal ValorTotal
 );

@@ -53,7 +53,9 @@ public static class ApplicationMappingProfile
             .Map(dest => dest.ValorDesejado, src => src.ValorDesejado.Valor)
             .Map(dest => dest.Prazo, src => (int)src.PrazoMeses)
             .Map(dest => dest.ValorTotalParcelas, src => 
-                src.Resultados.SelectMany(r => r.Parcelas ?? Enumerable.Empty<Parcela>())
-                    .Sum(p => p.ValorPrestacao.Valor));
+                src.Resultados.Select(r => new ValorTotalAmortizacaoResult(
+                    r.Tipo.ToString(),
+                    r.ValorTotal.Valor
+                )).ToList());
     }
 }

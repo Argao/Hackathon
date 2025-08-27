@@ -54,21 +54,22 @@ public class SimulacaoRepository(AppDbContext context) : ISimulacaoRepository
     // ✅ OTIMIZAÇÃO: Projeção direta sem includes desnecessários
     public async Task<IEnumerable<SimulacaoResumoDto>> ListarSimulacoesOtimizadoAsync(int pageNumber, int pageSize, CancellationToken ct)
     {
-        // Buscar dados do banco primeiro
         var simulacoes = await context.Simulacoes
-            .Include(s => s.Resultados) // Necessário para acessar Resultados
+            .Include(s => s.Resultados)
             .OrderByDescending(s => s.IdSimulacao)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .AsNoTracking()
             .ToListAsync(ct);
 
-        // Fazer a projeção no cliente
         var resultado = simulacoes.Select(s => new SimulacaoResumoDto(
             s.IdSimulacao,
             s.ValorDesejado.Valor,
             s.PrazoMeses.Meses,
-            s.Resultados.Sum(r => r.ValorTotal.Valor)
+            s.Resultados.Select(r => new ValorTotalAmortizacaoDto(
+                r.Tipo.ToString(),
+                r.ValorTotal.Valor
+            )).ToList()
         ));
 
         return resultado;

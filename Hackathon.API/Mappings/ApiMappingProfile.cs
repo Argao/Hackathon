@@ -52,6 +52,9 @@ public static class ApiMappingProfile
             .NewConfig()
             .Map(dest => dest.IdSimulacao, src => src.Id);
 
+        TypeAdapterConfig<ValorTotalAmortizacaoResult, ValorTotalAmortizacaoResponse>
+            .NewConfig();
+
         // Volume Result mappings
         TypeAdapterConfig<VolumeSimuladoResult, VolumeSimuladoResponse>
             .NewConfig()
