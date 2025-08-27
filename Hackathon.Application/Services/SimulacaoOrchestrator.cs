@@ -5,7 +5,6 @@ using Hackathon.Domain.Exceptions;
 using Hackathon.Domain.Interfaces.Repositories;
 using Hackathon.Domain.ValueObjects;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Caching.Memory;
 
 namespace Hackathon.Application.Services;
 
@@ -22,11 +21,7 @@ public class SimulacaoOrchestrator : ISimulacaoOrchestrator
     private readonly IEventPublisher _eventPublisher;
     private readonly IMapper _mapper;
     private readonly ILogger<SimulacaoOrchestrator> _logger;
-    private readonly IMemoryCache _cache;
     private readonly IVolumeSimuladoCacheService _volumeCacheService;
-
-    // ✅ OTIMIZAÇÃO: Cache de resultados de simulação
-    private static readonly TimeSpan CacheDuration = TimeSpan.FromMinutes(10);
 
     public SimulacaoOrchestrator(
         ICachedProdutoService produtoService,
@@ -36,7 +31,6 @@ public class SimulacaoOrchestrator : ISimulacaoOrchestrator
         IEventPublisher eventPublisher,
         IMapper mapper,
         ILogger<SimulacaoOrchestrator> logger,
-        IMemoryCache cache,
         IVolumeSimuladoCacheService volumeCacheService)
     {
         _produtoService = produtoService;
@@ -46,7 +40,6 @@ public class SimulacaoOrchestrator : ISimulacaoOrchestrator
         _eventPublisher = eventPublisher;
         _mapper = mapper;
         _logger = logger;
-        _cache = cache;
         _volumeCacheService = volumeCacheService;
     }
 
@@ -59,14 +52,6 @@ public class SimulacaoOrchestrator : ISimulacaoOrchestrator
 
         var (valorEmprestimo, prazoMeses) = valueObjectsResult.Value;
         var valorMonetario = ValorMonetario.Create(valorEmprestimo.Valor).Value;
-
-        // ✅ OTIMIZAÇÃO: Verificar cache antes de calcular
-        var cacheKey = GerarCacheKey(valorMonetario, prazoMeses);
-        if (_cache.TryGetValue(cacheKey, out SimulacaoResult cachedResult))
-        {
-
-            return cachedResult;
-        }
 
         // 2. Obter produto (delegado para serviço específico)
         var produto = await _produtoService.GetProdutoAdequadoAsync(valorMonetario, prazoMeses, cancellationToken);
@@ -88,15 +73,6 @@ public class SimulacaoOrchestrator : ISimulacaoOrchestrator
         // 5. Mapear resultado usando abstração genérica (SOLID + Clean Architecture)
         var result = _mapper.Map<Domain.Entities.Simulacao, SimulacaoResult>(simulacao);
 
-        // ✅ OTIMIZAÇÃO: Armazenar no cache
-        var cacheOptions = new MemoryCacheEntryOptions
-        {
-            AbsoluteExpirationRelativeToNow = CacheDuration,
-            Size = 1 // Tamanho estimado para o item do cache
-        };
-        _cache.Set(cacheKey, result, cacheOptions);
-        
-
         // 6. Persistir (crítico - aguarda)
         await _repository.AdicionarAsync(simulacao, cancellationToken);
 
@@ -109,13 +85,5 @@ public class SimulacaoOrchestrator : ISimulacaoOrchestrator
         _eventPublisher.PublishAsync(result);
 
         return result;
-    }
-
-    /// <summary>
-    /// Gera chave única para cache baseada nos parâmetros da simulação
-    /// </summary>
-    private static string GerarCacheKey(ValorMonetario valor, PrazoMeses prazo)
-    {
-        return $"simulacao_{valor.Valor:F2}_{prazo.Meses}";
     }
 }

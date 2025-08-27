@@ -1,46 +1,9 @@
-
-
 services:
-  # ===========================
-  # Aplicação Principal - Produção
-  # ===========================
-  hackathon-api:
-    container_name: hackathon-api
-    image: hackathon-api:latest
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - "8080:8080"
-    environment:
-      - ASPNETCORE_URLS=http://+:8080
-      - ASPNETCORE_ENVIRONMENT=Production
-      - DOTNET_RUNNING_IN_CONTAINER=true
-      - ConnectionStrings__ProdutosDb=Server=dbhackathon.database.windows.net,1433;Database=hack;User ID=hack;Password=Password23;Encrypt=True;TrustServerCertificate=True;MultipleActiveResultSets=True;Connection Timeout=30;
-      - ConnectionStrings__LocalDb=Data Source=/app/data/hack.db
-      - ConnectionStrings__EventHub=Endpoint=sb://eventhack.servicebus.windows.net/;SharedAccessKeyName=hack;SharedAccessKey=HeHeVaVqyVkntO2FnjQcs2Ilh/4MUDo4y+AEhKp8z+g=;EntityPath=simulacoes
-    healthcheck:
-      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
-    restart: unless-stopped
-    networks:
-      - hackathon-network
-    profiles:
-      - prod
-      - default
-
   # ===========================
   # Aplicação - Desenvolvimento
   # ===========================
-  hackathon-api-dev:
-    container_name: hackathon-api-dev
-    image: hackathon-api:dev
-    build:
-      context: .
-      dockerfile: Dockerfile
+  api-dev:
+    build: .
     ports:
       - "5000:8080"
     environment:
@@ -50,6 +13,8 @@ services:
       - ConnectionStrings__ProdutosDb=Server=dbhackathon.database.windows.net,1433;Database=hack;User ID=hack;Password=Password23;Encrypt=True;TrustServerCertificate=True;MultipleActiveResultSets=True;Connection Timeout=30;
       - ConnectionStrings__LocalDb=Data Source=/app/data/hack.db
       - ConnectionStrings__EventHub=Endpoint=sb://eventhack.servicebus.windows.net/;SharedAccessKeyName=hack;SharedAccessKey=HeHeVaVqyVkntO2FnjQcs2Ilh/4MUDo4y+AEhKp8z+g=;EntityPath=simulacoes
+    volumes:
+      - ./data:/app/data
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
       interval: 30s
@@ -57,11 +22,29 @@ services:
       retries: 3
       start_period: 60s
     restart: unless-stopped
-    networks:
-      - hackathon-network
-    profiles:
-      - dev
+    profiles: [dev]
 
-networks:
-  hackathon-network:
-    driver: bridge
+  # ===========================
+  # Aplicação - Produção
+  # ===========================
+  api-prod:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:8080
+      - DOTNET_RUNNING_IN_CONTAINER=true
+      - ConnectionStrings__ProdutosDb=Server=dbhackathon.database.windows.net,1433;Database=hack;User ID=hack;Password=Password23;Encrypt=True;TrustServerCertificate=True;MultipleActiveResultSets=True;Connection Timeout=30;
+      - ConnectionStrings__LocalDb=Data Source=/app/data/hack.db
+      - ConnectionStrings__EventHub=Endpoint=sb://eventhack.servicebus.windows.net/;SharedAccessKeyName=hack;SharedAccessKey=HeHeVaVqyVkntO2FnjQcs2Ilh/4MUDo4y+AEhKp8z+g=;EntityPath=simulacoes
+    volumes:
+      - ./data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    profiles: [prod]

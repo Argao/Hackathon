@@ -1,7 +1,9 @@
 using Hackathon.Infrastructure.Extensions;
 using Hackathon.Infrastructure.Interfaces;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.FileProviders;
 
 namespace Hackathon.Infrastructure.Tests.Extensions;
@@ -14,7 +16,7 @@ public class ApplicationBuilderExtensionsTests
         // Arrange
         var services = new ServiceCollection();
         services.AddLogging();
-        services.AddSingleton<IWebHostEnvironment>(new TestWebHostEnvironment { EnvironmentName = "Production" });
+        services.AddSingleton<IHostEnvironment>(new TestHostEnvironment { EnvironmentName = "Production" });
         services.AddScoped<IDatabaseInitializationService, TestDatabaseInitializationService>();
         
         var serviceProvider = services.BuildServiceProvider();
@@ -34,7 +36,7 @@ public class ApplicationBuilderExtensionsTests
         // Arrange
         var services = new ServiceCollection();
         services.AddLogging();
-        services.AddSingleton<IWebHostEnvironment>(new TestWebHostEnvironment { EnvironmentName = "Development" });
+        services.AddSingleton<IHostEnvironment>(new TestHostEnvironment { EnvironmentName = "Development" });
         services.AddScoped<IDatabaseInitializationService, TestDatabaseInitializationService>();
         
         var serviceProvider = services.BuildServiceProvider();
@@ -54,24 +56,23 @@ public class ApplicationBuilderExtensionsTests
         // Arrange
         var services = new ServiceCollection();
         services.AddLogging();
-        services.AddSingleton<IWebHostEnvironment>(new TestWebHostEnvironment { EnvironmentName = "Production" });
+        services.AddSingleton<IHostEnvironment>(new TestHostEnvironment { EnvironmentName = "Production" });
         services.AddScoped<IDatabaseInitializationService, FailingDatabaseInitializationService>();
         
         var serviceProvider = services.BuildServiceProvider();
         var app = new ApplicationBuilder(serviceProvider);
 
         // Act & Assert
-        Assert.Throws<InvalidOperationException>(() => app.UseInfrastructureDatabaseInitialization());
+        var exception = Assert.Throws<InvalidOperationException>(() => app.UseInfrastructureDatabaseInitialization());
+        Assert.Contains("Erro simulado na inicialização do banco", exception.Message);
     }
 
-    private class TestWebHostEnvironment : IWebHostEnvironment
+    private class TestHostEnvironment : IHostEnvironment
     {
         public string ApplicationName { get; set; } = "TestApp";
-        public IFileProvider ContentRootFileProvider { get; set; } = new NullFileProvider();
-        public string ContentRootPath { get; set; } = "/test";
         public string EnvironmentName { get; set; } = "Test";
-        public IFileProvider WebRootFileProvider { get; set; } = new NullFileProvider();
-        public string WebRootPath { get; set; } = "/test/wwwroot";
+        public string ContentRootPath { get; set; } = "/test";
+        public IFileProvider ContentRootFileProvider { get; set; } = new NullFileProvider();
     }
 
     private class TestDatabaseInitializationService : IDatabaseInitializationService
