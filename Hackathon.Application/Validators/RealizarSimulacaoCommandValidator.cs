@@ -4,9 +4,6 @@ using Hackathon.Domain.ValueObjects;
 
 namespace Hackathon.Application.Validators;
 
-/// <summary>
-/// Validator para o comando de realizar simulação
-/// </summary>
 public class RealizarSimulacaoCommandValidator : AbstractValidator<RealizarSimulacaoCommand>
 {
     public RealizarSimulacaoCommandValidator()

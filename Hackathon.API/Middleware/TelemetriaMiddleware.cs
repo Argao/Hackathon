@@ -6,8 +6,8 @@ using System.Threading.Channels;
 namespace Hackathon.API.Middleware;
 
 /// <summary>
-/// Middleware para coleta automática de métricas de telemetria
-/// Implementa processamento em lote para minimizar overhead
+/// Middleware para coleta de métricas de telemetria
+/// Processamento em lote para minimizar overhead
 /// </summary>
 public class TelemetriaMiddleware
 {
@@ -51,7 +51,7 @@ public class TelemetriaMiddleware
     }
 
     /// <summary>
-    /// Intercepta todas as requisições HTTP para coletar métricas
+    /// Intercepta requisições HTTP para coletar métricas
     /// </summary>
     public async Task InvokeAsync(HttpContext context)
     {
@@ -79,7 +79,7 @@ public class TelemetriaMiddleware
             // Parar cronômetro imediatamente após processamento
             stopwatch.Stop();
 
-            // 🔥 PROCESSAMENTO EM LOTE: Enfileirar métrica sem bloquear
+            // Processamento em lote: enfileirar métrica sem bloquear
             var metricaData = new MetricaData
             {
                 NomeApi = nomeApi,
@@ -96,7 +96,7 @@ public class TelemetriaMiddleware
     }
 
     /// <summary>
-    /// Processa métricas em lote para reduzir overhead
+    /// Processa métricas em lote
     /// </summary>
     private async Task ProcessMetricsAsync(CancellationToken cancellationToken)
     {
@@ -158,11 +158,11 @@ public class TelemetriaMiddleware
                     CancellationToken.None);
             }
             
-            _logger.LogDebug("Processado lote de {Count} métricas", batch.Count);
+
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Falha ao processar lote de {Count} métricas", batch.Count);
+
         }
     }
 

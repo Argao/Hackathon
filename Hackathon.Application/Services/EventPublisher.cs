@@ -4,11 +4,6 @@ using Microsoft.Extensions.Logging;
 
 namespace Hackathon.Application.Services;
 
-/// <summary>
-/// Publisher genérico que abstrai detalhes de implementação de eventos
-/// DIP: Depende de abstração IEventHubService, não de implementação concreta
-/// SRP: Apenas publicação de eventos em background
-/// </summary>
 public class EventPublisher : IEventPublisher
 {
     private readonly IEventHubService _eventHubService;
@@ -28,11 +23,11 @@ public class EventPublisher : IEventPublisher
             try
             {
                 _eventHubService.EnviarSimulacao(eventData);
-                _logger.LogInformation("✅ Evento publicado com sucesso: {EventType}", typeof(T).Name);
+                _logger.LogInformation("Evento publicado com sucesso: {EventType}", typeof(T).Name);
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "⚠️ Falha ao publicar evento: {EventType}", typeof(T).Name);
+                _logger.LogWarning(ex, "Falha ao publicar evento: {EventType}", typeof(T).Name);
             }
         }, null);
     }

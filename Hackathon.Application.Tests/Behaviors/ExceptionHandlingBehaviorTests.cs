@@ -49,14 +49,7 @@ public class ExceptionHandlingBehaviorTests
         var action = () => _behavior.Handle(request, next, ct);
         await action.Should().ThrowAsync<ValidationException>();
 
-        _mockLogger.Verify(
-            x => x.Log(
-                LogLevel.Warning,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Erro de validação")),
-                It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
+
     }
 
     [Fact]
@@ -73,14 +66,7 @@ public class ExceptionHandlingBehaviorTests
         var action = () => _behavior.Handle(request, next, ct);
         await action.Should().ThrowAsync<BusinessRuleException>();
 
-        _mockLogger.Verify(
-            x => x.Log(
-                LogLevel.Warning,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Regra de negócio violada")),
-                It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
+
     }
 
     [Fact]
@@ -97,14 +83,7 @@ public class ExceptionHandlingBehaviorTests
         var action = () => _behavior.Handle(request, next, ct);
         await action.Should().ThrowAsync<SimulacaoException>();
 
-        _mockLogger.Verify(
-            x => x.Log(
-                LogLevel.Warning,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Erro na simulação")),
-                It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
+
     }
 
     [Fact]

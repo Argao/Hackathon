@@ -3,9 +3,6 @@ using Hackathon.Application.Queries;
 
 namespace Hackathon.Application.Validators;
 
-/// <summary>
-/// Validator para a query de listagem de simulações
-/// </summary>
 public class ListarSimulacoesQueryValidator : AbstractValidator<ListarSimulacoesQuery>
 {
     public ListarSimulacoesQueryValidator()

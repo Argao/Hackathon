@@ -1,6 +1,7 @@
 using Hackathon.Application.Queries;
 using Hackathon.Application.Results;
 using Hackathon.Application.Services;
+using Hackathon.Domain.Exceptions;
 using Mapster;
 using MediatR;
 
@@ -23,6 +24,11 @@ public class ObterVolumeSimuladoHandler : IRequestHandler<ObterVolumeSimuladoQue
     {
         // ✅ OTIMIZAÇÃO: Usar cache com estratégia híbrida
         var dadosAgregados = await _cacheService.GetVolumeSimuladoAsync(request.DataReferencia, cancellationToken);
+        
+        if (!dadosAgregados.Any())
+        {
+            throw new SimulacaoException($"Nenhum dado de volume simulado encontrado para a data {request.DataReferencia:yyyy-MM-dd}");
+        }
         
         var produtos = dadosAgregados.Select(dto => new VolumeSimuladoProdutoResult(
             dto.CodigoProduto,

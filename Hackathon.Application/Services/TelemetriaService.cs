@@ -6,9 +6,6 @@ using Microsoft.Extensions.Logging;
 
 namespace Hackathon.Application.Services;
 
-/// <summary>
-/// Serviço de telemetria com implementação fire-and-forget otimizada
-/// </summary>
 public class TelemetriaService : ITelemetriaService
 {
     private readonly IServiceScopeFactory _scopeFactory;
@@ -22,9 +19,6 @@ public class TelemetriaService : ITelemetriaService
         _logger = logger;
     }
 
-    /// <summary>
-    /// Registra métrica de forma fire-and-forget usando Task.Run para não bloquear o thread principal
-    /// </summary>
     public async Task RegistrarMetricaAsync(
         string nomeApi, 
         string endpoint, 
@@ -35,8 +29,7 @@ public class TelemetriaService : ITelemetriaService
     {
         if (string.IsNullOrWhiteSpace(nomeApi) || string.IsNullOrWhiteSpace(endpoint))
         {
-            _logger.LogWarning("Tentativa de registrar métrica com parâmetros inválidos: " +
-                "NomeApi='{NomeApi}', Endpoint='{Endpoint}'", nomeApi, endpoint);
+
             return;
         }
 

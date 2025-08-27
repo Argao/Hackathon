@@ -4,11 +4,6 @@ using Microsoft.Extensions.Logging;
 
 namespace Hackathon.Application.Behaviors;
 
-/// <summary>
-/// Behavior para tratamento centralizado de exceções
-/// Cross-cutting concern para logging estruturado de erros
-/// SRP: Apenas tratamento e logging de exceções
-/// </summary>
 public class ExceptionHandlingBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
     where TRequest : class, IRequest<TResponse>
 {
@@ -27,19 +22,19 @@ public class ExceptionHandlingBehavior<TRequest, TResponse> : IPipelineBehavior<
         }
         catch (ValidationException ex)
         {
-            _logger.LogWarning("⚠️ Erro de validação em {RequestName}: {Errors}", 
+            _logger.LogWarning("Erro de validação em {RequestName}: {Errors}", 
                 typeof(TRequest).Name, string.Join("; ", ex.Errors));
             throw;
         }
         catch (BusinessRuleException ex)
         {
-            _logger.LogWarning("⚠️ Regra de negócio violada em {RequestName}: {Message} (Código: {RuleCode})", 
+                        _logger.LogWarning("Regra de negócio violada em {RequestName}: {Message} (Código: {RuleCode})",
                 typeof(TRequest).Name, ex.Message, ex.RuleCode);
             throw;
         }
         catch (SimulacaoException ex)
         {
-            _logger.LogWarning("⚠️ Erro na simulação em {RequestName}: {Message}", 
+                        _logger.LogWarning("Erro na simulação em {RequestName}: {Message}",
                 typeof(TRequest).Name, ex.Message);
             throw;
         }

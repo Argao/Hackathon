@@ -28,7 +28,7 @@ public class ObterTelemetriaHandler : IRequestHandler<ObterTelemetriaQuery, Tele
         
         if (!metricasAgregadas.Any())
         {
-            _logger.LogInformation("Nenhum dado de telemetria encontrado para data: {DataReferencia}", dataReferencia);
+
             throw new SimulacaoException($"Nenhum dado de telemetria encontrado para a data {dataReferencia:yyyy-MM-dd}");
         }
 

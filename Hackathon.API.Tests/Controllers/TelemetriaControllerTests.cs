@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Hackathon.API.Controllers;
+using Hackathon.API.Contracts.Requests;
 using Hackathon.API.Contracts.Responses;
 using Hackathon.Application.Queries;
 using Hackathon.Application.Results;
@@ -26,6 +27,7 @@ public class TelemetriaControllerTests
     {
         // Arrange
         var dataReferencia = DateOnly.FromDateTime(DateTime.Today);
+        var request = new TelemetriaRequest(dataReferencia);
         
         var telemetriaResult = new TelemetriaResult(
             dataReferencia,
@@ -40,7 +42,7 @@ public class TelemetriaControllerTests
             .ReturnsAsync(telemetriaResult);
 
         // Act
-        var result = await _controller.ObterTelemetriaPorDia(dataReferencia);
+        var result = await _controller.ObterTelemetriaPorDia(request);
 
         // Assert
         result.Should().NotBeNull();
@@ -65,13 +67,14 @@ public class TelemetriaControllerTests
     {
         // Arrange
         var dataReferencia = DateOnly.FromDateTime(DateTime.Today);
+        var request = new TelemetriaRequest(dataReferencia);
 
         _mockMediator
             .Setup(x => x.Send(It.IsAny<ObterTelemetriaQuery>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new SimulacaoException("Nenhum dado de telemetria encontrado para a data 2024-01-15"));
 
         // Act
-        var result = await _controller.ObterTelemetriaPorDia(dataReferencia);
+        var result = await _controller.ObterTelemetriaPorDia(request);
 
         // Assert
         result.Should().NotBeNull();
@@ -90,6 +93,7 @@ public class TelemetriaControllerTests
     {
         // Arrange
         var dataFutura = DateOnly.FromDateTime(DateTime.Today.AddDays(1));
+        var request = new TelemetriaRequest(dataFutura);
 
         _mockMediator
             .Setup(x => x.Send(It.IsAny<ObterTelemetriaQuery>(), It.IsAny<CancellationToken>()))
@@ -97,7 +101,7 @@ public class TelemetriaControllerTests
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentException>(
-            () => _controller.ObterTelemetriaPorDia(dataFutura));
+            () => _controller.ObterTelemetriaPorDia(request));
 
         exception.Message.Should().Be("Data de referência não pode ser futura");
 
@@ -111,6 +115,7 @@ public class TelemetriaControllerTests
     {
         // Arrange
         var dataPassada = DateOnly.FromDateTime(DateTime.Today.AddDays(-1));
+        var request = new TelemetriaRequest(dataPassada);
         
         var telemetriaResult = new TelemetriaResult(
             dataPassada,
@@ -125,7 +130,7 @@ public class TelemetriaControllerTests
             .ReturnsAsync(telemetriaResult);
 
         // Act
-        var result = await _controller.ObterTelemetriaPorDia(dataPassada);
+        var result = await _controller.ObterTelemetriaPorDia(request);
 
         // Assert
         result.Should().NotBeNull();
@@ -148,6 +153,7 @@ public class TelemetriaControllerTests
     {
         // Arrange
         var dataReferencia = DateOnly.FromDateTime(DateTime.Today);
+        var request = new TelemetriaRequest(dataReferencia);
         var cancellationToken = new CancellationToken();
         
         var telemetriaResult = new TelemetriaResult(
@@ -163,7 +169,7 @@ public class TelemetriaControllerTests
             .ReturnsAsync(telemetriaResult);
 
         // Act
-        await _controller.ObterTelemetriaPorDia(dataReferencia, cancellationToken);
+        await _controller.ObterTelemetriaPorDia(request, cancellationToken);
 
         // Assert
         _mockMediator.Verify(
@@ -199,6 +205,7 @@ public class TelemetriaControllerTests
     {
         // Arrange
         var dataReferencia = DateOnly.FromDateTime(DateTime.Today);
+        var request = new TelemetriaRequest(dataReferencia);
         
         var telemetriaResult = new TelemetriaResult(
             dataReferencia,
@@ -214,7 +221,7 @@ public class TelemetriaControllerTests
             .ReturnsAsync(telemetriaResult);
 
         // Act
-        var result = await _controller.ObterTelemetriaPorDia(dataReferencia);
+        var result = await _controller.ObterTelemetriaPorDia(request);
 
         // Assert
         result.Should().NotBeNull();

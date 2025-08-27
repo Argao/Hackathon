@@ -46,11 +46,11 @@ public class CachedProdutoService : ICachedProdutoService
     {
         if (_cache.TryGetValue(CACHE_KEY_ALL, out List<Produto>? todosProdutos))
         {
-            _logger.LogDebug("⚡ Cache hit: {Count} produtos obtidos da memória (ZERO latência)", todosProdutos?.Count ?? 0);
+
             return todosProdutos;
         }
 
-        _logger.LogInformation("Cache miss: buscando produtos do SQL Server");
+
         
         todosProdutos = (await _produtoRepository.GetAllAsync(ct))?.ToList();
         
@@ -64,8 +64,7 @@ public class CachedProdutoService : ICachedProdutoService
             };
             
             _cache.Set(CACHE_KEY_ALL, todosProdutos, cacheOptions);
-            _logger.LogInformation("✅ Cache preenchido: {Count} produtos por {Duration} minutos", 
-                todosProdutos.Count, CACHE_DURATION_MINUTES);
+
         }
 
         return todosProdutos;
@@ -74,6 +73,6 @@ public class CachedProdutoService : ICachedProdutoService
     public void InvalidateCache()
     {
         _cache.Remove(CACHE_KEY_ALL);
-        _logger.LogInformation("Cache de produtos invalidado");
+
     }
 }

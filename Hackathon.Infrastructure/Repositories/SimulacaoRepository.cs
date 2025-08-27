@@ -10,7 +10,7 @@ public class SimulacaoRepository(AppDbContext context) : ISimulacaoRepository
 {
     public async Task<Simulacao> AdicionarAsync(Simulacao simulacao, CancellationToken ct)
     {
-        // ✅ OTIMIZAÇÃO: Configurar para inserção em lote
+        // Configurar para inserção em lote
         context.ChangeTracker.AutoDetectChangesEnabled = false;
         
         context.Simulacoes.Add(simulacao);

@@ -5,11 +5,6 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Hackathon.Application.Services;
 
-/// <summary>
-/// Service com responsabilidade única: coordenar validações
-/// SRP: Apenas encontra e executa o validador apropriado
-/// OCP: Extensível para novos tipos de validação
-/// </summary>
 public class ValidationService : IValidationService
 {
     private readonly IServiceProvider _serviceProvider;

@@ -19,7 +19,7 @@ public class PerformanceConfigurationService
     {
         try
         {
-            _logger.LogInformation("⚡ Configurando otimizações de performance...");
+    
 
             // ✅ OTIMIZAÇÃO: Configurar ThreadPool para alta concorrência
             ConfigureThreadPool();
@@ -27,11 +27,11 @@ public class PerformanceConfigurationService
             // ✅ OTIMIZAÇÃO: Configurar Garbage Collector
             ConfigureGarbageCollector();
 
-            _logger.LogInformation("✅ Otimizações de performance configuradas com sucesso");
+
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "⚠️ Falha ao configurar otimizações de performance: {Message}", ex.Message);
+            _logger.LogWarning(ex, "Falha ao configurar otimizações de performance: {Message}", ex.Message);
         }
     }
 
@@ -48,8 +48,7 @@ public class PerformanceConfigurationService
         ThreadPool.SetMinThreads(minWorkerThreads, minCompletionPortThreads);
         ThreadPool.SetMaxThreads(maxWorkerThreads, maxCompletionPortThreads);
 
-        _logger.LogInformation("✅ ThreadPool configurado: Min({MinWorker}/{MinCompletion}), Max({MaxWorker}/{MaxCompletion})", 
-            minWorkerThreads, minCompletionPortThreads, maxWorkerThreads, maxCompletionPortThreads);
+        
     }
 
     private void ConfigureGarbageCollector()
@@ -58,7 +57,6 @@ public class PerformanceConfigurationService
         GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
         
         // ✅ OTIMIZAÇÃO: Log do modo atual do GC
-        _logger.LogInformation("✅ GC configurado - Server Mode: {IsServerGC}, Processors: {ProcessorCount}", 
-            GCSettings.IsServerGC, Environment.ProcessorCount);
+        
     }
 }

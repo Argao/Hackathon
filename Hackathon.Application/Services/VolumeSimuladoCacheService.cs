@@ -36,12 +36,12 @@ public class VolumeSimuladoCacheService : IVolumeSimuladoCacheService
         // ✅ OTIMIZAÇÃO: Verificar cache primeiro
         if (_cache.TryGetValue(cacheKey, out IEnumerable<VolumeSimuladoProdutoDto>? cachedData))
         {
-            _logger.LogDebug("✅ Cache hit para volume simulado: {DataReferencia}", dataReferencia);
+
             return cachedData!;
         }
 
         // ✅ OTIMIZAÇÃO: Buscar dados do repositório
-        _logger.LogDebug("❌ Cache miss para volume simulado: {DataReferencia}", dataReferencia);
+        
         var dados = await _repository.ObterVolumeSimuladoPorProdutoAsync(dataReferencia, ct);
 
         // ✅ OTIMIZAÇÃO: TTL dinâmico baseado na data
@@ -53,7 +53,7 @@ public class VolumeSimuladoCacheService : IVolumeSimuladoCacheService
         };
 
         _cache.Set(cacheKey, dados, cacheOptions);
-        _logger.LogDebug("✅ Dados armazenados no cache com TTL: {TTL} minutos", ttl.TotalMinutes);
+        
 
         return dados;
     }
@@ -62,7 +62,7 @@ public class VolumeSimuladoCacheService : IVolumeSimuladoCacheService
     {
         var cacheKey = $"volume_simulado_{dataReferencia:yyyy-MM-dd}";
         _cache.Remove(cacheKey);
-        _logger.LogDebug("🗑️ Cache invalidado para: {DataReferencia}", dataReferencia);
+
     }
 
     /// <summary>

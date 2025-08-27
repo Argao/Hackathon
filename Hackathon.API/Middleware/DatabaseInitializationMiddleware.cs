@@ -53,23 +53,23 @@ public class DatabaseInitializationMiddleware
         
         try
         {
-            logger.LogInformation("🔄 Iniciando inicialização do banco de dados...");
+            logger.LogInformation("Iniciando inicialização do banco de dados...");
             await dbInitializer.InitializeDatabaseAsync();
-            logger.LogInformation("✅ Banco de dados inicializado com sucesso!");
+            logger.LogInformation("Banco de dados inicializado com sucesso!");
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "❌ Erro crítico ao inicializar banco de dados: {Message}", ex.Message);
+            logger.LogError(ex, "Erro crítico ao inicializar banco de dados: {Message}", ex.Message);
             
             // Em desenvolvimento, permitir continuar com erro
             if (_environment.IsDevelopment())
             {
-                logger.LogWarning("⚠️ Continuando em modo desenvolvimento apesar do erro...");
+                logger.LogWarning("Continuando em modo desenvolvimento apesar do erro...");
             }
             else
             {
                 // Em produção, falhar rápido
-                logger.LogCritical("💥 Falha crítica na inicialização do banco. Encerrando aplicação.");
+                logger.LogCritical("Falha crítica na inicialização do banco. Encerrando aplicação.");
                 throw;
             }
         }

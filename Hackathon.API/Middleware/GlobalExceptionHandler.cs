@@ -6,9 +6,6 @@ using Microsoft.Extensions.Logging;
 
 namespace Hackathon.API.Middleware;
 
-/// <summary>
-/// Middleware para tratamento global de exceções
-/// </summary>
 public class GlobalExceptionHandler
 {
     private readonly RequestDelegate _next;

@@ -1,26 +1,26 @@
 using Hackathon.Application.DependencyInjection;
 using Hackathon.Application.Interfaces;
 using Hackathon.Application.Services;
-using Microsoft.Extensions.Logging;
 using Hackathon.Domain.Interfaces.Repositories;
 using Hackathon.Domain.Interfaces.Services;
 using Hackathon.Domain.Services;
 using Hackathon.Infrastructure.Context;
 using Hackathon.Infrastructure.EventHub;
+using Hackathon.Infrastructure.Interfaces;
 using Hackathon.Infrastructure.Repositories;
 using Hackathon.Infrastructure.Services;
-using Hackathon.Infrastructure.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
-namespace Hackathon.Infrastructure.DependencyInjection;
+namespace Hackathon.Infrastructure.Extensions;
 
 public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
-        // ✅ OTIMIZAÇÃO: Configurar performance do sistema
+        // Configurar performance do sistema
         var performanceService = new PerformanceConfigurationService(
             services.BuildServiceProvider().GetRequiredService<ILogger<PerformanceConfigurationService>>());
         performanceService.ConfigurePerformanceOptimizations();
@@ -53,19 +53,19 @@ public static class ServiceCollectionExtensions
         {
             options.UseSqlite(localConnectionString, sqliteOptions =>
             {
-                sqliteOptions.CommandTimeout(120); // ✅ OTIMIZAÇÃO: Aumentado para volume alto
-                sqliteOptions.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery); // ✅ OTIMIZAÇÃO: Split queries para melhor performance
-                sqliteOptions.MaxBatchSize(100); // ✅ OTIMIZAÇÃO: Otimizar inserções em lote
-            });
-            
-            // ✅ OTIMIZAÇÃO: Configurações para volume alto
-            options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking); // ✅ OTIMIZAÇÃO: No tracking para consultas de leitura
+                            sqliteOptions.CommandTimeout(120); // Aumentado para volume alto
+            sqliteOptions.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery); // Split queries para melhor performance
+            sqliteOptions.MaxBatchSize(100); // Otimizar inserções em lote
+        });
+        
+        // Configurações para volume alto
+        options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking); // No tracking para consultas de leitura
             
             // PERFORMANCE: Reduzir logging em produção
             options.EnableSensitiveDataLogging(false);
             options.EnableDetailedErrors(false);
             
-            // ✅ OTIMIZAÇÃO: Configurar batch size para inserções
+            // Configurar batch size para inserções
             options.ConfigureWarnings(warnings =>
             {
                 warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.MultipleCollectionIncludeWarning);

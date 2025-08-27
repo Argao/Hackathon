@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
@@ -16,10 +17,12 @@ namespace Hackathon.API.Contracts.Requests;
 /// </remarks>
 public sealed record ListarSimulacoesRequest(
     [property: JsonPropertyName("pagina")]
+    [property: DefaultValue(1)]
     [Range(1, int.MaxValue, ErrorMessage = "A página deve ser maior que zero")]
     int Pagina = 1,
     
     [property: JsonPropertyName("qtdRegistrosPagina")]
+    [property: DefaultValue(10)]
     [Range(1, int.MaxValue, ErrorMessage = "A quantidade de registros deve ser maior que zero")]
     int QtdRegistrosPagina = 10
 );

@@ -119,6 +119,7 @@ public class SimulacaoControllerTests
     {
         // Arrange
         var dataReferencia = DateOnly.FromDateTime(DateTime.Today);
+        var request = new VolumeSimuladoRequest(dataReferencia);
         
         var volumeResult = new VolumeSimuladoResult(
             dataReferencia,
@@ -133,7 +134,7 @@ public class SimulacaoControllerTests
             .ReturnsAsync(volumeResult);
 
         // Act
-        var result = await _controller.ObterVolumePorDia(dataReferencia, CancellationToken.None);
+        var result = await _controller.ObterVolumePorDia(request, CancellationToken.None);
 
         // Assert
         result.Should().NotBeNull();
@@ -145,6 +146,39 @@ public class SimulacaoControllerTests
         var response = okResult.Value as VolumeSimuladoResponse;
         response!.DataReferencia.Should().Be(dataReferencia.ToString("yyyy-MM-dd"));
         response.Simulacoes.Should().HaveCount(1);
+
+        _mockMediator.Verify(
+            x => x.Send(It.IsAny<ObterVolumeSimuladoQuery>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task ObterVolumePorDia_ComDataSemDados_DeveRetornarNotFound()
+    {
+        // Arrange
+        var dataReferencia = DateOnly.FromDateTime(DateTime.Today);
+        var request = new VolumeSimuladoRequest(dataReferencia);
+
+        _mockMediator
+            .Setup(x => x.Send(It.IsAny<ObterVolumeSimuladoQuery>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new Hackathon.Domain.Exceptions.SimulacaoException("Nenhum dado de volume simulado encontrado para a data 2024-01-15"));
+
+        // Act
+        var result = await _controller.ObterVolumePorDia(request, CancellationToken.None);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Result.Should().BeOfType<NotFoundObjectResult>();
+        
+        var notFoundResult = result.Result as NotFoundObjectResult;
+        notFoundResult!.Value.Should().NotBeNull();
+        
+        // Verificar as propriedades usando JsonElement
+        var jsonString = System.Text.Json.JsonSerializer.Serialize(notFoundResult.Value);
+        var jsonElement = System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.JsonElement>(jsonString);
+        
+        jsonElement.GetProperty("message").GetString().Should().Contain("Nenhum dado de volume simulado encontrado");
+        jsonElement.GetProperty("dataReferencia").GetString().Should().Be(dataReferencia.ToString("yyyy-MM-dd"));
 
         _mockMediator.Verify(
             x => x.Send(It.IsAny<ObterVolumeSimuladoQuery>(), It.IsAny<CancellationToken>()),
@@ -213,6 +247,7 @@ public class SimulacaoControllerTests
     {
         // Arrange
         var dataReferencia = DateOnly.FromDateTime(DateTime.Today);
+        var request = new VolumeSimuladoRequest(dataReferencia);
         
         var volumeResult = new VolumeSimuladoResult(
             dataReferencia,
@@ -226,7 +261,7 @@ public class SimulacaoControllerTests
             .ReturnsAsync(volumeResult);
 
         // Act
-        await _controller.ObterVolumePorDia(dataReferencia, cancellationToken);
+        await _controller.ObterVolumePorDia(request, cancellationToken);
 
         // Assert
         _mockMediator.Verify(

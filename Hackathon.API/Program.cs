@@ -3,18 +3,16 @@ using System.Reflection;
 using Hackathon.API.Mappings;
 using Hackathon.API.Middleware;
 using Hackathon.Application.DependencyInjection;
-using Hackathon.Infrastructure.DependencyInjection;
 using Mapster;
 using Microsoft.OpenApi.Models;
 using System.Threading;
+using Hackathon.Infrastructure.Extensions;
 using Hackathon.Infrastructure.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-
+// Configurar serviços básicos da API
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -81,26 +79,13 @@ TypeAdapterConfig.GlobalSettings.Compile();
 
 var app = builder.Build();
 
-// ✅ OTIMIZAÇÃO: Inicializar banco ANTES de configurar o pipeline
-// Evita bloqueio na primeira requisição
-if (app.Environment.IsProduction())
-{
-    try
-    {
-        app.Logger.LogInformation("🔄 Inicializando banco de dados em produção...");
-        using var scope = app.Services.CreateScope();
-        var dbInitializer = scope.ServiceProvider.GetRequiredService<IDatabaseInitializationService>();
-        await dbInitializer.InitializeDatabaseAsync();
-        app.Logger.LogInformation("✅ Banco de dados inicializado com sucesso");
-    }
-    catch (Exception ex)
-    {
-        app.Logger.LogCritical(ex, "❌ Falha crítica na inicialização do banco de dados");
-        throw;
-    }
-}
+// Configurar pipeline de infraestrutura
+app.UseInfrastructurePipeline();
 
-// Configure the HTTP request pipeline.
+// Inicialização do banco baseada no ambiente (encapsulada na infraestrutura)
+app.UseInfrastructureDatabaseInitialization();
+
+// Configurar pipeline de requisições HTTP
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -116,18 +101,13 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-
-
-// Configurar pipeline de infraestrutura
-app.UseInfrastructurePipeline();
-
-// 🔥 Middleware de inicialização do banco de dados
+// Middleware de inicialização do banco de dados
 app.UseDatabaseInitialization();
 
-// 🔥 Middleware de telemetria ANTES do roteamento para capturar todas as requisições
+// Middleware de telemetria antes do roteamento
 app.UseMiddleware<TelemetriaMiddleware>();
 
-// 🛡️ Global Exception Handler
+// Global Exception Handler
 app.UseMiddleware<GlobalExceptionHandler>();
 
 app.UseAuthorization();

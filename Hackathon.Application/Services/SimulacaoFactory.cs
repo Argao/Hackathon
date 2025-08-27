@@ -4,10 +4,6 @@ using Hackathon.Domain.ValueObjects;
 
 namespace Hackathon.Application.Services;
 
-/// <summary>
-/// Factory com responsabilidade única: criar simulações
-/// SRP: Apenas criação de simulações com regras de negócio
-/// </summary>
 public class SimulacaoFactory : ISimulacaoFactory
 {
     public Simulacao CriarSimulacao(

@@ -67,12 +67,10 @@ public class EventHubService : IEventHubService, IDisposable
 
             // Enviar evento de forma assíncrona
             await _producer.SendAsync(new[] { eventData }, cancellationToken);
-            
-            _logger.LogInformation("Simulação enviada com sucesso para o EventHub");
         }
         catch (OperationCanceledException ex)
         {
-            _logger.LogWarning(ex, "Envio para EventHub foi cancelado: {ErrorMessage}", ex.Message);
+
             throw;
         }
         catch (Exception ex)
@@ -132,8 +130,6 @@ public class EventHubService : IEventHubService, IDisposable
 
             // Enviar evento de forma síncrona (bloqueante)
             _producer.SendAsync(new[] { eventData }, CancellationToken.None).GetAwaiter().GetResult();
-        
-            _logger.LogInformation("Simulação enviada com sucesso para o EventHub");
         }
         catch (Exception ex)
         {

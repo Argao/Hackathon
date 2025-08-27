@@ -5,11 +5,6 @@ using DomainValidationException = Hackathon.Domain.Exceptions.ValidationExceptio
 
 namespace Hackathon.Application.Behaviors;
 
-/// <summary>
-/// Behavior para validação automática de requests
-/// Cross-cutting concern aplicado a todos os commands/queries
-/// SRP: Apenas validação
-/// </summary>
 public class ValidationBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
     where TRequest : class, IRequest<TResponse>
 {

@@ -18,8 +18,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        // Removido: modelBuilder.HasDefaultSchema("main"); - SQLite não suporta schemas
-        
         ConfigureValueObjectConversions(modelBuilder);
 
         // Configuração da tabela SIMULACAO
@@ -35,14 +33,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.HasIndex(e => e.DataReferencia)
                 .HasDatabaseName("IX_SIMULACAO_DT_REFERENCIA");
             
-            // OTIMIZAÇÃO: Índices compostos para consultas de paginação
+            // Índices compostos para consultas de paginação
             entity.HasIndex(e => new { e.DataReferencia, e.IdSimulacao })
                 .HasDatabaseName("IX_SIMULACAO_DATA_ID_COMPOSTO");
             
             entity.HasIndex(e => new { e.CodigoProduto, e.DataReferencia })
                 .HasDatabaseName("IX_SIMULACAO_PRODUTO_DATA");
             
-            // ✅ OTIMIZAÇÃO: Índice composto para consulta de volume simulado
+            // Índice composto para consulta de volume simulado
             entity.HasIndex(e => new { e.DataReferencia, e.CodigoProduto })
                 .HasDatabaseName("IX_SIMULACAO_DATA_PRODUTO");
             
@@ -261,7 +259,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             var result = await base.SaveChangesAsync(cancellationToken);
             var duration = DateTime.UtcNow - startTime;
             
-            // ✅ OTIMIZAÇÃO: Log apenas se demorar muito (aumentado threshold)
+            // Log apenas se demorar muito (aumentado threshold)
             if (duration.TotalMilliseconds > 500)
             {
                 Console.WriteLine($"⚠️ SaveChanges demorou {duration.TotalMilliseconds}ms para {result} registros");

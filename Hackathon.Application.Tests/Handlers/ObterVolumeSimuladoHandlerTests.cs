@@ -2,6 +2,7 @@ using Hackathon.Application.Handlers;
 using Hackathon.Application.Queries;
 using Hackathon.Application.Results;
 using Hackathon.Application.Services;
+using Hackathon.Domain.Exceptions;
 using Hackathon.Domain.Interfaces.Repositories;
 using Mapster;
 using MediatR;
@@ -60,7 +61,7 @@ public class ObterVolumeSimuladoHandlerTests
     }
 
     [Fact]
-    public async Task Handle_ComListaVazia_DeveRetornarResultadoVazio()
+    public async Task Handle_ComListaVazia_DeveLancarSimulacaoException()
     {
         // Arrange
         var query = new ObterVolumeSimuladoQuery(_dataReferencia);
@@ -69,13 +70,16 @@ public class ObterVolumeSimuladoHandlerTests
             .Setup(x => x.GetVolumeSimuladoAsync(_dataReferencia, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<VolumeSimuladoProdutoDto>());
 
-        // Act
-        var result = await _handler.Handle(query, CancellationToken.None);
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<SimulacaoException>(
+            () => _handler.Handle(query, CancellationToken.None));
 
-        // Assert
-        result.Should().NotBeNull();
-        result.DataReferencia.Should().Be(_dataReferencia);
-        result.Produtos.Should().BeEmpty();
+        exception.Message.Should().Contain("Nenhum dado de volume simulado encontrado");
+        exception.Message.Should().Contain(_dataReferencia.ToString("yyyy-MM-dd"));
+        
+        _mockCacheService.Verify(
+            x => x.GetVolumeSimuladoAsync(_dataReferencia, It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     [Fact]
@@ -85,9 +89,14 @@ public class ObterVolumeSimuladoHandlerTests
         var query = new ObterVolumeSimuladoQuery(_dataReferencia);
         var cancellationToken = new CancellationToken();
         
+        var dadosAgregados = new List<VolumeSimuladoProdutoDto>
+        {
+            new(1, "Produto 1", 0.05m, 1000m, 10000m, 12000m)
+        };
+
         _mockCacheService
             .Setup(x => x.GetVolumeSimuladoAsync(_dataReferencia, cancellationToken))
-            .ReturnsAsync(new List<VolumeSimuladoProdutoDto>());
+            .ReturnsAsync(dadosAgregados);
 
         // Act
         await _handler.Handle(query, cancellationToken);

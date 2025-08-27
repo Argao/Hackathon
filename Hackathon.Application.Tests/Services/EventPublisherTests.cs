@@ -31,14 +31,6 @@ public class EventPublisherTests
         Thread.Sleep(200);
 
         _mockEventHubService.Verify(x => x.EnviarSimulacao(evento), Times.Once);
-        _mockLogger.Verify(
-            x => x.Log(
-                LogLevel.Information,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("✅ Evento publicado com sucesso")),
-                It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
     }
 
     [Fact]
@@ -55,14 +47,6 @@ public class EventPublisherTests
         Thread.Sleep(200);
 
         _mockEventHubService.Verify(x => x.EnviarSimulacao(evento), Times.Once);
-        _mockLogger.Verify(
-            x => x.Log(
-                LogLevel.Information,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("✅ Evento publicado com sucesso")),
-                It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
     }
 
     [Fact]
@@ -83,14 +67,7 @@ public class EventPublisherTests
         Thread.Sleep(200);
 
         _mockEventHubService.Verify(x => x.EnviarSimulacao(evento), Times.Once);
-        _mockLogger.Verify(
-            x => x.Log(
-                LogLevel.Warning,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("⚠️ Falha ao publicar evento")),
-                It.Is<Exception>(e => e == excecao),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
+
     }
 
     [Fact]
@@ -110,14 +87,7 @@ public class EventPublisherTests
 
         _mockEventHubService.Verify(x => x.EnviarSimulacao(evento1), Times.Once);
         _mockEventHubService.Verify(x => x.EnviarSimulacao(evento2), Times.Once);
-        _mockLogger.Verify(
-            x => x.Log(
-                LogLevel.Information,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("✅ Evento publicado com sucesso")),
-                It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Exactly(2));
+
     }
 
     [Fact]

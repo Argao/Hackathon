@@ -64,7 +64,7 @@ public class SimulacaoOrchestrator : ISimulacaoOrchestrator
         var cacheKey = GerarCacheKey(valorMonetario, prazoMeses);
         if (_cache.TryGetValue(cacheKey, out SimulacaoResult cachedResult))
         {
-            _logger.LogDebug("✅ Cache hit para simulação: {CacheKey}", cacheKey);
+
             return cachedResult;
         }
 
@@ -95,15 +95,15 @@ public class SimulacaoOrchestrator : ISimulacaoOrchestrator
             Size = 1 // Tamanho estimado para o item do cache
         };
         _cache.Set(cacheKey, result, cacheOptions);
-        _logger.LogDebug("✅ Cache miss - calculado e armazenado: {CacheKey}", cacheKey);
+        
 
         // 6. Persistir (crítico - aguarda)
         await _repository.AdicionarAsync(simulacao, cancellationToken);
-        _logger.LogInformation("✅ Simulação persistida - ID: {SimulacaoId}", result.Id);
+
 
         // ✅ OTIMIZAÇÃO: Invalidar cache de volume simulado
         _volumeCacheService.InvalidateCache(simulacao.DataReferencia);
-        _logger.LogDebug("🗑️ Cache de volume simulado invalidado para: {Data}", simulacao.DataReferencia);
+        
 
         // 7. Publicar evento (não crítico - fire and forget)
         _eventPublisher.PublishAsync(result);

@@ -5,11 +5,6 @@ using Hackathon.Domain.ValueObjects;
 
 namespace Hackathon.Application.Services;
 
-/// <summary>
-/// Service com responsabilidade única: executar cálculos financeiros
-/// SRP: Apenas coordena as calculadoras disponíveis
-/// OCP: Extensível para novos tipos de calculadora
-/// </summary>
 public class CalculadoraService : ICalculadoraService
 {
     private readonly IEnumerable<ICalculadoraAmortizacao> _calculadoras;
