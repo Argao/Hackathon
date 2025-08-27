@@ -114,11 +114,14 @@ public class TelemetriaServiceTests
 
         // Assert
         // O método não deve lançar exceção mesmo com erro no repository
+        // Aguardamos um pouco para permitir que a tarefa assíncrona seja executada
+        await Task.Delay(100);
+        
         _mockLogger.Verify(
             x => x.Log(
                 LogLevel.Error,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Erro crítico no serviço de telemetria")),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Erro crítico no serviço de telemetria ao registrar métrica")),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);

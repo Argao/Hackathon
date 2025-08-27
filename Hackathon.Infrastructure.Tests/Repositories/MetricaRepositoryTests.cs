@@ -266,12 +266,13 @@ public class MetricaRepositoryTests
 
     private static List<MetricaRequisicao> CreateListaMetricas()
     {
+        var hoje = DateTime.Today;
         return new List<MetricaRequisicao>
         {
-            new() { NomeApi = "API.Teste", Endpoint = "POST /api/simulacao", StatusCode = 200, TempoRespostaMs = 100, Sucesso = true, DataHora = DateTime.UtcNow },
-            new() { NomeApi = "API.Teste", Endpoint = "POST /api/simulacao", StatusCode = 200, TempoRespostaMs = 150, Sucesso = true, DataHora = DateTime.UtcNow },
-            new() { NomeApi = "API.Teste", Endpoint = "GET /api/produtos", StatusCode = 200, TempoRespostaMs = 50, Sucesso = true, DataHora = DateTime.UtcNow },
-            new() { NomeApi = "API.Teste", Endpoint = "POST /api/simulacao", StatusCode = 400, TempoRespostaMs = 200, Sucesso = false, DataHora = DateTime.UtcNow }
+            new() { NomeApi = "API.Teste", Endpoint = "POST /api/simulacao", StatusCode = 200, TempoRespostaMs = 100, Sucesso = true, DataHora = hoje.AddHours(10) },
+            new() { NomeApi = "API.Teste", Endpoint = "POST /api/simulacao", StatusCode = 200, TempoRespostaMs = 150, Sucesso = true, DataHora = hoje.AddHours(11) },
+            new() { NomeApi = "API.Teste", Endpoint = "GET /api/produtos", StatusCode = 200, TempoRespostaMs = 50, Sucesso = true, DataHora = hoje.AddHours(12) },
+            new() { NomeApi = "API.Teste", Endpoint = "POST /api/simulacao", StatusCode = 400, TempoRespostaMs = 200, Sucesso = false, DataHora = hoje.AddHours(13) }
         };
     }
 }

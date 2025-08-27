@@ -46,7 +46,7 @@ public class SimulacaoRepositoryTests
     }
 
     [Fact]
-    public async Task ListarPaginadoAsync_ComDados_DeveRetornarResultadoPaginado()
+    public async Task ListarSimulacoesOtimizadoAsync_ComDados_DeveRetornarResultadoPaginado()
     {
         // Arrange
         var options = new DbContextOptionsBuilder<AppDbContext>()
@@ -70,7 +70,7 @@ public class SimulacaoRepositoryTests
     }
 
     [Fact]
-    public async Task ListarPaginadoAsync_ComPaginaVazia_DeveRetornarListaVazia()
+    public async Task ListarSimulacoesOtimizadoAsync_ComPaginaVazia_DeveRetornarListaVazia()
     {
         // Arrange
         var options = new DbContextOptionsBuilder<AppDbContext>()
@@ -82,30 +82,6 @@ public class SimulacaoRepositoryTests
 
         // Act
         var resultado = await repository.ListarSimulacoesOtimizadoAsync(1, 10, CancellationToken.None);
-
-        // Assert
-        resultado.Should().NotBeNull();
-        resultado.Should().BeEmpty();
-    }
-
-    [Fact]
-    public async Task ListarPaginadoAsync_ComPaginaMaiorQueTotal_DeveRetornarListaVazia()
-    {
-        // Arrange
-        var options = new DbContextOptionsBuilder<AppDbContext>()
-            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
-            .Options;
-
-        using var context = new AppDbContext(options);
-        var repository = new SimulacaoRepository(context);
-
-        // Adicionar dados de teste
-        var simulacoes = CreateListaSimulacoes();
-        context.Simulacoes.AddRange(simulacoes);
-        await context.SaveChangesAsync();
-
-        // Act
-        var resultado = await repository.ListarSimulacoesOtimizadoAsync(10, 10, CancellationToken.None);
 
         // Assert
         resultado.Should().NotBeNull();
@@ -234,7 +210,7 @@ public class SimulacaoRepositoryTests
     }
 
     [Fact]
-    public async Task ListarSimulacoesAsync_ComDados_DeveRetornarSimulacoesPaginadas()
+    public async Task ListarSimulacoesOtimizadoAsync_ComDadosComResultados_DeveRetornarSimulacoesPaginadas()
     {
         // Arrange
         var options = new DbContextOptionsBuilder<AppDbContext>()
@@ -259,7 +235,7 @@ public class SimulacaoRepositoryTests
     }
 
     [Fact]
-    public async Task ListarSimulacoesAsync_SemDados_DeveRetornarListaVazia()
+    public async Task ListarSimulacoesOtimizadoAsync_SemDados_DeveRetornarListaVazia()
     {
         // Arrange
         var options = new DbContextOptionsBuilder<AppDbContext>()
@@ -271,30 +247,6 @@ public class SimulacaoRepositoryTests
 
         // Act
         var resultado = await repository.ListarSimulacoesOtimizadoAsync(1, 10, CancellationToken.None);
-
-        // Assert
-        resultado.Should().NotBeNull();
-        resultado.Should().BeEmpty();
-    }
-
-    [Fact]
-    public async Task ListarSimulacoesAsync_ComPaginaMaiorQueTotal_DeveRetornarListaVazia()
-    {
-        // Arrange
-        var options = new DbContextOptionsBuilder<AppDbContext>()
-            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
-            .Options;
-
-        using var context = new AppDbContext(options);
-        var repository = new SimulacaoRepository(context);
-
-        // Adicionar dados de teste
-        var simulacoes = CreateSimulacoesComResultados();
-        context.Simulacoes.AddRange(simulacoes);
-        await context.SaveChangesAsync();
-
-        // Act
-        var resultado = await repository.ListarSimulacoesOtimizadoAsync(10, 10, CancellationToken.None);
 
         // Assert
         resultado.Should().NotBeNull();

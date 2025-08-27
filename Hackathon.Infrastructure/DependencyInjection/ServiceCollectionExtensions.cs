@@ -1,3 +1,4 @@
+using Hackathon.Application.DependencyInjection;
 using Hackathon.Application.Interfaces;
 using Hackathon.Application.Services;
 using Microsoft.Extensions.Logging;
@@ -102,6 +103,9 @@ public static class ServiceCollectionExtensions
 
         // Database Initialization Service
         services.AddScoped<DatabaseInitializationService>();
+
+        // Adicionar serviços da camada de aplicação (incluindo validadores)
+        services.AddApplicationServices();
 
         return services;
     }

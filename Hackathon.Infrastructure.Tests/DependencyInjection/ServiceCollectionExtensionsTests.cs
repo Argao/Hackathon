@@ -41,6 +41,7 @@ public class ServiceCollectionExtensionsTests
     {
         // Arrange
         var configuration = CreateValidConfiguration();
+        _services.AddLogging(); // Adicionar logging
 
         // Act
         _services.AddInfrastructure(configuration);
@@ -110,6 +111,7 @@ public class ServiceCollectionExtensionsTests
     {
         // Arrange
         var configuration = CreateConfigurationWithoutProdutosDb();
+        _services.AddLogging(); // Adicionar logging
 
         // Act & Assert
         FluentActions.Invoking(() => _services.AddInfrastructure(configuration))
@@ -122,6 +124,7 @@ public class ServiceCollectionExtensionsTests
     {
         // Arrange
         var configuration = CreateConfigurationWithoutLocalDb();
+        _services.AddLogging(); // Adicionar logging
 
         // Act & Assert
         FluentActions.Invoking(() => _services.AddInfrastructure(configuration))
@@ -134,6 +137,7 @@ public class ServiceCollectionExtensionsTests
     {
         // Arrange
         var configuration = CreateValidConfiguration();
+        _services.AddLogging(); // Adicionar logging
 
         // Act
         _services.AddInfrastructure(configuration);
@@ -152,6 +156,7 @@ public class ServiceCollectionExtensionsTests
     {
         // Arrange
         var configuration = CreateValidConfiguration();
+        _services.AddLogging(); // Adicionar logging
 
         // Act
         _services.AddInfrastructure(configuration);
@@ -189,6 +194,7 @@ public class ServiceCollectionExtensionsTests
     {
         // Arrange
         var configuration = CreateValidConfiguration();
+        _services.AddLogging(); // Adicionar logging
 
         // Act
         _services.AddInfrastructure(configuration);

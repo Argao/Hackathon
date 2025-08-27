@@ -70,7 +70,7 @@ public class WarmupServiceTests
         var logger = new Mock<ILogger<WarmupService>>();
         
         // Setup para retornar null para os serviços
-        serviceProvider.Setup(x => x.GetService(It.IsAny<Type>())).Returns(null);
+        serviceProvider.Setup(x => x.GetService(It.IsAny<Type>())).Returns((object?)null);
         
         var warmupService = new WarmupService(serviceProvider.Object, logger.Object);
         var cancellationToken = new CancellationToken();

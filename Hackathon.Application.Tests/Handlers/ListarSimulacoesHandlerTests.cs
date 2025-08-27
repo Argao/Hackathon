@@ -1,10 +1,7 @@
 using Hackathon.Application.Handlers;
-using Hackathon.Application.Interfaces;
 using Hackathon.Application.Queries;
 using Hackathon.Application.Results;
-using Hackathon.Domain.Entities;
 using Hackathon.Domain.Interfaces.Repositories;
-using Hackathon.Domain.ValueObjects;
 using Moq;
 
 namespace Hackathon.Application.Tests.Handlers;
@@ -12,14 +9,12 @@ namespace Hackathon.Application.Tests.Handlers;
 public class ListarSimulacoesHandlerTests
 {
     private readonly Mock<ISimulacaoRepository> _mockRepository;
-    private readonly Mock<IMapper> _mockMapper;
     private readonly ListarSimulacoesHandler _handler;
 
     public ListarSimulacoesHandlerTests()
     {
         _mockRepository = new Mock<ISimulacaoRepository>();
-        _mockMapper = new Mock<IMapper>();
-        _handler = new ListarSimulacoesHandler(_mockRepository.Object, _mockMapper.Object);
+        _handler = new ListarSimulacoesHandler(_mockRepository.Object);
     }
 
     [Fact]
@@ -29,19 +24,7 @@ public class ListarSimulacoesHandlerTests
         var query = new ListarSimulacoesQuery(1, 10);
         var ct = CancellationToken.None;
 
-        var simulacoes = new List<Domain.Entities.Simulacao>
-        {
-            Simulacao.Create(
-                1,
-                "Produto Teste",
-                TaxaJuros.Create(0.015m).Value,
-                ValorMonetario.Create(10000m).Value,
-                PrazoMeses.Create(12).Value,
-                DateOnly.FromDateTime(DateTime.Today)
-            )
-        };
-
-        var resumos = new List<SimulacaoResumoResult>
+        var simulacoesDto = new List<SimulacaoResumoDto>
         {
             new(Guid.NewGuid(), 10000m, 12, 12000m)
         };
@@ -51,12 +34,8 @@ public class ListarSimulacoesHandlerTests
             .ReturnsAsync(1);
 
         _mockRepository
-            .Setup(x => x.ListarSimulacoesAsync(1, 10, ct))
-            .ReturnsAsync(simulacoes);
-
-        _mockMapper
-            .Setup(x => x.MapCollection<Domain.Entities.Simulacao, SimulacaoResumoResult>(simulacoes))
-            .Returns(resumos);
+            .Setup(x => x.ListarSimulacoesOtimizadoAsync(1, 10, ct))
+            .ReturnsAsync(simulacoesDto);
 
         // Act
         var result = await _handler.Handle(query, ct);
@@ -69,8 +48,7 @@ public class ListarSimulacoesHandlerTests
         result.PageSize.Should().Be(10);
 
         _mockRepository.Verify(x => x.ObterTotalSimulacoesAsync(ct), Times.Once);
-        _mockRepository.Verify(x => x.ListarSimulacoesAsync(1, 10, ct), Times.Once);
-        _mockMapper.Verify(x => x.MapCollection<Domain.Entities.Simulacao, SimulacaoResumoResult>(simulacoes), Times.Once);
+        _mockRepository.Verify(x => x.ListarSimulacoesOtimizadoAsync(1, 10, ct), Times.Once);
     }
 
     [Fact]
@@ -85,19 +63,15 @@ public class ListarSimulacoesHandlerTests
             .ReturnsAsync(0);
 
         _mockRepository
-            .Setup(x => x.ListarSimulacoesAsync(1, 10, ct))
-            .ReturnsAsync(new List<Domain.Entities.Simulacao>());
-
-        _mockMapper
-            .Setup(x => x.MapCollection<Domain.Entities.Simulacao, SimulacaoResumoResult>(It.IsAny<List<Domain.Entities.Simulacao>>()))
-            .Returns(new List<SimulacaoResumoResult>());
+            .Setup(x => x.ListarSimulacoesOtimizadoAsync(1, 10, ct))
+            .ReturnsAsync(new List<SimulacaoResumoDto>());
 
         // Act
         var result = await _handler.Handle(query, ct);
 
         // Assert
         result.CurrentPage.Should().Be(1);
-        _mockRepository.Verify(x => x.ListarSimulacoesAsync(1, 10, ct), Times.Once);
+        _mockRepository.Verify(x => x.ListarSimulacoesOtimizadoAsync(1, 10, ct), Times.Once);
     }
 
     [Fact]
@@ -112,19 +86,15 @@ public class ListarSimulacoesHandlerTests
             .ReturnsAsync(0);
 
         _mockRepository
-            .Setup(x => x.ListarSimulacoesAsync(1, 1, ct))
-            .ReturnsAsync(new List<Domain.Entities.Simulacao>());
-
-        _mockMapper
-            .Setup(x => x.MapCollection<Domain.Entities.Simulacao, SimulacaoResumoResult>(It.IsAny<List<Domain.Entities.Simulacao>>()))
-            .Returns(new List<SimulacaoResumoResult>());
+            .Setup(x => x.ListarSimulacoesOtimizadoAsync(1, 1, ct))
+            .ReturnsAsync(new List<SimulacaoResumoDto>());
 
         // Act
         var result = await _handler.Handle(query, ct);
 
         // Assert
         result.PageSize.Should().Be(1);
-        _mockRepository.Verify(x => x.ListarSimulacoesAsync(1, 1, ct), Times.Once);
+        _mockRepository.Verify(x => x.ListarSimulacoesOtimizadoAsync(1, 1, ct), Times.Once);
     }
 
     [Fact]
@@ -161,5 +131,37 @@ public class ListarSimulacoesHandlerTests
         await action.Should().ThrowAsync<OperationCanceledException>();
 
         _mockRepository.Verify(x => x.ObterTotalSimulacoesAsync(cts.Token), Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_ComExecucaoParalela_DeveExecutarConsultasEmParalelo()
+    {
+        // Arrange
+        var query = new ListarSimulacoesQuery(1, 10);
+        var ct = CancellationToken.None;
+
+        var simulacoesDto = new List<SimulacaoResumoDto>
+        {
+            new(Guid.NewGuid(), 10000m, 12, 12000m)
+        };
+
+        _mockRepository
+            .Setup(x => x.ObterTotalSimulacoesAsync(ct))
+            .ReturnsAsync(1);
+
+        _mockRepository
+            .Setup(x => x.ListarSimulacoesOtimizadoAsync(1, 10, ct))
+            .ReturnsAsync(simulacoesDto);
+
+        // Act
+        var result = await _handler.Handle(query, ct);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Items.Should().HaveCount(1);
+        
+        // Verificar que ambas as consultas foram chamadas
+        _mockRepository.Verify(x => x.ObterTotalSimulacoesAsync(ct), Times.Once);
+        _mockRepository.Verify(x => x.ListarSimulacoesOtimizadoAsync(1, 10, ct), Times.Once);
     }
 }
