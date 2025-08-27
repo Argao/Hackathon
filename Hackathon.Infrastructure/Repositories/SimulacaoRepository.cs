@@ -24,34 +24,24 @@ public class SimulacaoRepository(AppDbContext context) : ISimulacaoRepository
 
     public async Task<IEnumerable<VolumeSimuladoProdutoDto>> ObterVolumeSimuladoPorProdutoAsync(DateOnly dataReferencia, CancellationToken ct)
     {
-        // ✅ OTIMIZAÇÃO: Consulta em duas etapas para evitar carregar parcelas desnecessárias
+        // ✅ OTIMIZAÇÃO: Consulta em duas etapas para melhor performance
         var simulacoes = await context.Simulacoes
             .Include(s => s.Resultados)
             .Where(s => s.DataReferencia == dataReferencia)
             .AsNoTracking()
             .ToListAsync(ct);
 
-        // Buscar apenas os counts de parcelas necessários
-        var resultadoIds = simulacoes.SelectMany(s => s.Resultados).Select(r => r.IdResultado).ToList();
-        var parcelasCounts = await context.Parcelas
-            .Where(p => resultadoIds.Contains(p.IdResultado))
-            .GroupBy(p => p.IdResultado)
-            .Select(g => new { IdResultado = g.Key, Count = g.Count() })
-            .ToDictionaryAsync(x => x.IdResultado, x => x.Count, ct);
-
-        // Fazer as agregações no cliente
         var resultado = simulacoes
             .GroupBy(s => new { s.CodigoProduto, s.DescricaoProduto })
             .Select(g => new VolumeSimuladoProdutoDto(
                 g.Key.CodigoProduto,
                 g.Key.DescricaoProduto,
                 g.Average(s => s.TaxaJuros.Taxa),
-                g.SelectMany(s => s.Resultados)
-                    .Average(r => r.ValorTotal.Valor / parcelasCounts.GetValueOrDefault(r.IdResultado, 1)),
+                g.SelectMany(s => s.Resultados).Average(r => r.ValorTotal.Valor),
                 g.Sum(s => s.ValorDesejado.Valor),
-                g.SelectMany(s => s.Resultados)
-                    .Sum(r => r.ValorTotal.Valor)
-            ));
+                g.SelectMany(s => s.Resultados).Sum(r => r.ValorTotal.Valor)
+            ))
+            .ToList();
 
         return resultado;
     }

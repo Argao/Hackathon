@@ -36,6 +36,10 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<ICalculadoraService, CalculadoraService>();
         services.AddScoped<IValidationService, ValidationService>();
         services.AddScoped<IEventPublisher, EventPublisher>();
+        services.AddScoped<ITelemetriaService, TelemetriaService>();
+        
+        // ✅ OTIMIZAÇÃO: Registrar serviço de cache de volume simulado
+        services.AddScoped<IVolumeSimuladoCacheService, VolumeSimuladoCacheService>();
         
         // Mapper genérico (SOLID + Clean Architecture)
         services.AddScoped<IMapper, MapsterAdapter>();

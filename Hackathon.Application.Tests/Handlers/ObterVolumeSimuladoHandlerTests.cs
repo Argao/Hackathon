@@ -1,122 +1,100 @@
 using Hackathon.Application.Handlers;
 using Hackathon.Application.Queries;
 using Hackathon.Application.Results;
+using Hackathon.Application.Services;
 using Hackathon.Domain.Interfaces.Repositories;
+using Mapster;
+using MediatR;
 using Moq;
 
 namespace Hackathon.Application.Tests.Handlers;
 
 public class ObterVolumeSimuladoHandlerTests
 {
-    private readonly Mock<ISimulacaoRepository> _mockRepository;
+    private readonly Mock<IVolumeSimuladoCacheService> _mockCacheService;
     private readonly ObterVolumeSimuladoHandler _handler;
+    private readonly DateOnly _dataReferencia;
 
     public ObterVolumeSimuladoHandlerTests()
     {
-        _mockRepository = new Mock<ISimulacaoRepository>();
-        _handler = new ObterVolumeSimuladoHandler(_mockRepository.Object);
+        _mockCacheService = new Mock<IVolumeSimuladoCacheService>();
+        _handler = new ObterVolumeSimuladoHandler(_mockCacheService.Object);
+        _dataReferencia = DateOnly.FromDateTime(DateTime.Today);
     }
 
     [Fact]
-    public async Task Handle_ComQueryValida_DeveRetornarVolumeSimuladoResult()
+    public async Task Handle_ComDataValida_DeveRetornarVolumeSimuladoResult()
     {
         // Arrange
-        var dataReferencia = DateOnly.FromDateTime(DateTime.Today);
-        var query = new ObterVolumeSimuladoQuery(dataReferencia);
-        var ct = CancellationToken.None;
-
+        var query = new ObterVolumeSimuladoQuery(_dataReferencia);
+        
         var dadosAgregados = new List<VolumeSimuladoProdutoDto>
         {
-            new VolumeSimuladoProdutoDto(
-                CodigoProduto: 1,
-                DescricaoProduto: "Produto Teste",
-                TaxaMediaJuro: 0.015m,
-                ValorMedioPrestacao: 1000m,
-                ValorTotalDesejado: 10000m,
-                ValorTotalCredito: 12000m
-            )
+            new(1, "Produto 1", 0.05m, 1000m, 10000m, 12000m),
+            new(2, "Produto 2", 0.06m, 1500m, 15000m, 18000m)
         };
 
-        _mockRepository
-            .Setup(x => x.ObterVolumeSimuladoPorProdutoAsync(dataReferencia, ct))
+        _mockCacheService
+            .Setup(x => x.GetVolumeSimuladoAsync(_dataReferencia, It.IsAny<CancellationToken>()))
             .ReturnsAsync(dadosAgregados);
 
         // Act
-        var result = await _handler.Handle(query, ct);
+        var result = await _handler.Handle(query, CancellationToken.None);
 
         // Assert
         result.Should().NotBeNull();
-        result.DataReferencia.Should().Be(dataReferencia);
-        result.Produtos.Should().HaveCount(1);
+        result.DataReferencia.Should().Be(_dataReferencia);
+        result.Produtos.Should().HaveCount(2);
+        
+        var primeiroProduto = result.Produtos.First();
+        primeiroProduto.CodigoProduto.Should().Be(1);
+        primeiroProduto.DescricaoProduto.Should().Be("Produto 1");
+        primeiroProduto.TaxaMediaJuro.Should().Be(0.05m);
+        primeiroProduto.ValorMedioPrestacao.Should().Be(1000m);
+        primeiroProduto.ValorTotalDesejado.Should().Be(10000m);
+        primeiroProduto.ValorTotalCredito.Should().Be(12000m);
 
-        var produto = result.Produtos.First();
-        produto.CodigoProduto.Should().Be(1);
-        produto.DescricaoProduto.Should().Be("Produto Teste");
-        produto.TaxaMediaJuro.Should().Be(0.015m);
-        produto.ValorTotalDesejado.Should().Be(10000m);
-        produto.ValorTotalCredito.Should().Be(12000m);
-
-        _mockRepository.Verify(
-            x => x.ObterVolumeSimuladoPorProdutoAsync(dataReferencia, ct),
+        _mockCacheService.Verify(
+            x => x.GetVolumeSimuladoAsync(_dataReferencia, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
     [Fact]
-    public async Task Handle_ComDadosVazios_DeveRetornarResultadoVazio()
+    public async Task Handle_ComListaVazia_DeveRetornarResultadoVazio()
     {
         // Arrange
-        var dataReferencia = DateOnly.FromDateTime(DateTime.Today);
-        var query = new ObterVolumeSimuladoQuery(dataReferencia);
-        var ct = CancellationToken.None;
-
-        _mockRepository
-            .Setup(x => x.ObterVolumeSimuladoPorProdutoAsync(dataReferencia, ct))
+        var query = new ObterVolumeSimuladoQuery(_dataReferencia);
+        
+        _mockCacheService
+            .Setup(x => x.GetVolumeSimuladoAsync(_dataReferencia, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<VolumeSimuladoProdutoDto>());
 
         // Act
-        var result = await _handler.Handle(query, ct);
+        var result = await _handler.Handle(query, CancellationToken.None);
 
         // Assert
         result.Should().NotBeNull();
-        result.DataReferencia.Should().Be(dataReferencia);
+        result.DataReferencia.Should().Be(_dataReferencia);
         result.Produtos.Should().BeEmpty();
     }
 
     [Fact]
-    public async Task Handle_ComRepositoryLancandoExcecao_DevePropagarExcecao()
+    public async Task Handle_ComCancellationToken_DevePassarTokenParaServico()
     {
         // Arrange
-        var dataReferencia = DateOnly.FromDateTime(DateTime.Today);
-        var query = new ObterVolumeSimuladoQuery(dataReferencia);
-        var ct = CancellationToken.None;
+        var query = new ObterVolumeSimuladoQuery(_dataReferencia);
+        var cancellationToken = new CancellationToken();
+        
+        _mockCacheService
+            .Setup(x => x.GetVolumeSimuladoAsync(_dataReferencia, cancellationToken))
+            .ReturnsAsync(new List<VolumeSimuladoProdutoDto>());
 
-        _mockRepository
-            .Setup(x => x.ObterVolumeSimuladoPorProdutoAsync(dataReferencia, ct))
-            .ThrowsAsync(new Exception("Erro no repositório"));
+        // Act
+        await _handler.Handle(query, cancellationToken);
 
-        // Act & Assert
-        var action = () => _handler.Handle(query, ct);
-        await action.Should().ThrowAsync<Exception>()
-            .WithMessage("Erro no repositório");
-    }
-
-    [Fact]
-    public async Task Handle_ComCancellationTokenCancelado_DevePropagarCancellationToken()
-    {
-        // Arrange
-        var dataReferencia = DateOnly.FromDateTime(DateTime.Today);
-        var query = new ObterVolumeSimuladoQuery(dataReferencia);
-        var cts = new CancellationTokenSource();
-        cts.Cancel();
-
-        _mockRepository
-            .Setup(x => x.ObterVolumeSimuladoPorProdutoAsync(dataReferencia, cts.Token))
-            .ThrowsAsync(new OperationCanceledException());
-
-        // Act & Assert
-        var action = () => _handler.Handle(query, cts.Token);
-        await action.Should().ThrowAsync<OperationCanceledException>();
-
-        _mockRepository.Verify(x => x.ObterVolumeSimuladoPorProdutoAsync(dataReferencia, cts.Token), Times.Once);
+        // Assert
+        _mockCacheService.Verify(
+            x => x.GetVolumeSimuladoAsync(_dataReferencia, cancellationToken),
+            Times.Once);
     }
 }

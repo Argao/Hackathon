@@ -1,27 +1,28 @@
 using Hackathon.Application.Queries;
 using Hackathon.Application.Results;
-using Hackathon.Domain.Interfaces.Repositories;
+using Hackathon.Application.Services;
 using Mapster;
 using MediatR;
 
 namespace Hackathon.Application.Handlers;
 
 /// <summary>
-/// Handler para obter volume simulado
-/// SRP: Apenas coordena consulta de dados agregados
+/// Handler para obter volume simulado com cache otimizado
+/// SRP: Apenas coordena consulta de dados agregados com cache
 /// </summary>
 public class ObterVolumeSimuladoHandler : IRequestHandler<ObterVolumeSimuladoQuery, VolumeSimuladoResult>
 {
-    private readonly ISimulacaoRepository _repository;
+    private readonly IVolumeSimuladoCacheService _cacheService;
 
-    public ObterVolumeSimuladoHandler(ISimulacaoRepository repository)
+    public ObterVolumeSimuladoHandler(IVolumeSimuladoCacheService cacheService)
     {
-        _repository = repository;
+        _cacheService = cacheService;
     }
 
     public async Task<VolumeSimuladoResult> Handle(ObterVolumeSimuladoQuery request, CancellationToken cancellationToken)
     {
-        var dadosAgregados = await _repository.ObterVolumeSimuladoPorProdutoAsync(request.DataReferencia, cancellationToken);
+        // ✅ OTIMIZAÇÃO: Usar cache com estratégia híbrida
+        var dadosAgregados = await _cacheService.GetVolumeSimuladoAsync(request.DataReferencia, cancellationToken);
         
         var produtos = dadosAgregados.Select(dto => new VolumeSimuladoProdutoResult(
             dto.CodigoProduto,

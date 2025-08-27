@@ -23,6 +23,7 @@ public class SimulacaoOrchestrator : ISimulacaoOrchestrator
     private readonly IMapper _mapper;
     private readonly ILogger<SimulacaoOrchestrator> _logger;
     private readonly IMemoryCache _cache;
+    private readonly IVolumeSimuladoCacheService _volumeCacheService;
 
     // ✅ OTIMIZAÇÃO: Cache de resultados de simulação
     private static readonly TimeSpan CacheDuration = TimeSpan.FromMinutes(10);
@@ -35,7 +36,8 @@ public class SimulacaoOrchestrator : ISimulacaoOrchestrator
         IEventPublisher eventPublisher,
         IMapper mapper,
         ILogger<SimulacaoOrchestrator> logger,
-        IMemoryCache cache)
+        IMemoryCache cache,
+        IVolumeSimuladoCacheService volumeCacheService)
     {
         _produtoService = produtoService;
         _simulacaoFactory = simulacaoFactory;
@@ -45,6 +47,7 @@ public class SimulacaoOrchestrator : ISimulacaoOrchestrator
         _mapper = mapper;
         _logger = logger;
         _cache = cache;
+        _volumeCacheService = volumeCacheService;
     }
 
     public async Task<SimulacaoResult> RealizarSimulacaoAsync(RealizarSimulacaoCommand command, CancellationToken cancellationToken)
@@ -97,6 +100,10 @@ public class SimulacaoOrchestrator : ISimulacaoOrchestrator
         // 6. Persistir (crítico - aguarda)
         await _repository.AdicionarAsync(simulacao, cancellationToken);
         _logger.LogInformation("✅ Simulação persistida - ID: {SimulacaoId}", result.Id);
+
+        // ✅ OTIMIZAÇÃO: Invalidar cache de volume simulado
+        _volumeCacheService.InvalidateCache(simulacao.DataReferencia);
+        _logger.LogDebug("🗑️ Cache de volume simulado invalidado para: {Data}", simulacao.DataReferencia);
 
         // 7. Publicar evento (não crítico - fire and forget)
         _eventPublisher.PublishAsync(result);
