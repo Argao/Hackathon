@@ -1,18 +1,16 @@
 using Hackathon.Infrastructure.Interfaces;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace Hackathon.Infrastructure.Extensions;
 
-
 public static class ApplicationBuilderExtensions
 {
     public static IApplicationBuilder UseInfrastructureDatabaseInitialization(this IApplicationBuilder app)
     {
-        var environment = app.ApplicationServices.GetRequiredService<IWebHostEnvironment>();
+        var environment = app.ApplicationServices.GetRequiredService<IHostEnvironment>();
         var logger = app.ApplicationServices.GetRequiredService<ILogger<IApplicationBuilder>>();
 
         if (environment.IsProduction())

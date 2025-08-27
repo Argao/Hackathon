@@ -23,10 +23,6 @@
       <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.10" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Reference Include="Microsoft.AspNetCore.Hosting.Abstractions">
-        <HintPath>..\..\..\..\..\usr\lib\dotnet\shared\Microsoft.AspNetCore.App\8.0.18\Microsoft.AspNetCore.Hosting.Abstractions.dll</HintPath>
-      </Reference>
-    </ItemGroup>
+
 
 </Project>

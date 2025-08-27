@@ -34,10 +34,7 @@ RUN dotnet publish "Hackathon.API.csproj" -c Release -o /app/publish \
 # ===========================
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 
-# Definir usuário não-root para segurança
-RUN groupadd -r hackathon && useradd -r -g hackathon hackathon
-
-# Instalar dependências do sistema necessárias
+# Instalar curl para health check
 RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/* \
@@ -46,7 +43,7 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 # Copiar aplicação publicada
-COPY --from=build --chown=hackathon:hackathon /app/publish .
+COPY --from=build /app/publish .
 
 # Configurar variáveis de ambiente otimizadas
 ENV ASPNETCORE_ENVIRONMENT=Production \
@@ -62,14 +59,5 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl --fail http://localhost:8080/health || exit 1
 
-# Script de inicialização
-
-# Script de inicialização que aplica migrations e inicia a aplicação
-COPY --chown=hackathon:hackathon scripts/start.sh /app/start.sh
-RUN chmod +x /app/start.sh
-
-# Mudar para usuário não-root
-USER hackathon
-
-# Ponto de entrada
-ENTRYPOINT ["/app/start.sh"]
+# Ponto de entrada direto
+ENTRYPOINT ["dotnet", "Hackathon.API.dll"]
