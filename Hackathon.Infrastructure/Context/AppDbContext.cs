@@ -42,6 +42,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.HasIndex(e => new { e.CodigoProduto, e.DataReferencia })
                 .HasDatabaseName("IX_SIMULACAO_PRODUTO_DATA");
             
+            // ✅ OTIMIZAÇÃO: Índice composto para consulta de volume simulado
+            entity.HasIndex(e => new { e.DataReferencia, e.CodigoProduto })
+                .HasDatabaseName("IX_SIMULACAO_DATA_PRODUTO");
+            
             entity.Property(e => e.IdSimulacao)
                 .HasColumnName("ID_SIMULACAO")
                 .IsRequired();

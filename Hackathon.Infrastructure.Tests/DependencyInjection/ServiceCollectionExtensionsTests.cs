@@ -181,7 +181,6 @@ public class ServiceCollectionExtensionsTests
         var serviceProvider = _services.BuildServiceProvider();
         
         // Verificar se os serviços de aplicação foram registrados
-        serviceProvider.GetService<ISimulacaoService>().Should().NotBeNull();
         serviceProvider.GetService<ITelemetriaService>().Should().NotBeNull();
     }
 

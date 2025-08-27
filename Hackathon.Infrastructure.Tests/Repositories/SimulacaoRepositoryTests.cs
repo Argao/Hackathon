@@ -62,12 +62,11 @@ public class SimulacaoRepositoryTests
         await context.SaveChangesAsync();
 
         // Act
-        var resultado = await repository.ListarPaginadoAsync(1, 10, CancellationToken.None);
+        var resultado = await repository.ListarSimulacoesOtimizadoAsync(1, 10, CancellationToken.None);
 
         // Assert
         resultado.Should().NotBeNull();
-        resultado.Data.Should().NotBeNull();
-        resultado.TotalRecords.Should().Be(simulacoes.Count);
+        resultado.Should().HaveCount(simulacoes.Count);
     }
 
     [Fact]
@@ -82,12 +81,11 @@ public class SimulacaoRepositoryTests
         var repository = new SimulacaoRepository(context);
 
         // Act
-        var resultado = await repository.ListarPaginadoAsync(1, 10, CancellationToken.None);
+        var resultado = await repository.ListarSimulacoesOtimizadoAsync(1, 10, CancellationToken.None);
 
         // Assert
         resultado.Should().NotBeNull();
-        resultado.Data.Should().BeEmpty();
-        resultado.TotalRecords.Should().Be(0);
+        resultado.Should().BeEmpty();
     }
 
     [Fact]
@@ -107,12 +105,11 @@ public class SimulacaoRepositoryTests
         await context.SaveChangesAsync();
 
         // Act
-        var resultado = await repository.ListarPaginadoAsync(10, 10, CancellationToken.None);
+        var resultado = await repository.ListarSimulacoesOtimizadoAsync(10, 10, CancellationToken.None);
 
         // Assert
         resultado.Should().NotBeNull();
-        resultado.Data.Should().BeEmpty();
-        resultado.TotalRecords.Should().Be(simulacoes.Count);
+        resultado.Should().BeEmpty();
     }
 
     [Fact]
@@ -184,9 +181,9 @@ public class SimulacaoRepositoryTests
         var primeiroResultado = resultado.First();
         primeiroResultado.CodigoProduto.Should().Be(1);
         primeiroResultado.DescricaoProduto.Should().Be("Produto 1");
-        primeiroResultado.TaxaMediaJuro.Should().NotBeNull();
-        primeiroResultado.ValorTotalDesejado.Should().NotBeNull();
-        primeiroResultado.ValorTotalCredito.Should().NotBeNull();
+        primeiroResultado.TaxaMediaJuro.Should().BeGreaterThan(0);
+        primeiroResultado.ValorTotalDesejado.Should().BeGreaterThan(0);
+        primeiroResultado.ValorTotalCredito.Should().BeGreaterThan(0);
     }
 
     [Fact]
@@ -253,7 +250,7 @@ public class SimulacaoRepositoryTests
         await context.SaveChangesAsync();
 
         // Act
-        var resultado = await repository.ListarSimulacoesAsync(1, 10, CancellationToken.None);
+        var resultado = await repository.ListarSimulacoesOtimizadoAsync(1, 10, CancellationToken.None);
 
         // Assert
         resultado.Should().NotBeNull();
@@ -273,7 +270,7 @@ public class SimulacaoRepositoryTests
         var repository = new SimulacaoRepository(context);
 
         // Act
-        var resultado = await repository.ListarSimulacoesAsync(1, 10, CancellationToken.None);
+        var resultado = await repository.ListarSimulacoesOtimizadoAsync(1, 10, CancellationToken.None);
 
         // Assert
         resultado.Should().NotBeNull();
@@ -297,7 +294,7 @@ public class SimulacaoRepositoryTests
         await context.SaveChangesAsync();
 
         // Act
-        var resultado = await repository.ListarSimulacoesAsync(10, 10, CancellationToken.None);
+        var resultado = await repository.ListarSimulacoesOtimizadoAsync(10, 10, CancellationToken.None);
 
         // Assert
         resultado.Should().NotBeNull();

@@ -22,7 +22,7 @@ public class CachedProdutoService : ICachedProdutoService
     private readonly IMemoryCache _cache;
     private readonly ILogger<CachedProdutoService> _logger;
     
-    private const int CACHE_DURATION_MINUTES = 240; // ULTRA OTIMIZADO: 4 horas (dados estáticos)
+    private const int CACHE_DURATION_MINUTES = 5; 
     private const string CACHE_KEY_ALL = "produtos_all";
 
     public CachedProdutoService(

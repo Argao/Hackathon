@@ -10,39 +10,48 @@ public class SimulacaoRepository(AppDbContext context) : ISimulacaoRepository
 {
     public async Task<Simulacao> AdicionarAsync(Simulacao simulacao, CancellationToken ct)
     {
+        // ✅ OTIMIZAÇÃO: Configurar para inserção em lote
+        context.ChangeTracker.AutoDetectChangesEnabled = false;
+        
         context.Simulacoes.Add(simulacao);
         
-
+        // ✅ OTIMIZAÇÃO: Usar SaveChangesAsync com configuração otimizada
         await context.SaveChangesAsync(ct);
+        
+        context.ChangeTracker.AutoDetectChangesEnabled = true;
         return simulacao;
     }
 
     public async Task<IEnumerable<VolumeSimuladoProdutoDto>> ObterVolumeSimuladoPorProdutoAsync(DateOnly dataReferencia, CancellationToken ct)
     {
-        // Primeiro, buscar as simulações do banco
+        // ✅ OTIMIZAÇÃO: Consulta em duas etapas para evitar carregar parcelas desnecessárias
         var simulacoes = await context.Simulacoes
             .Include(s => s.Resultados)
-            .ThenInclude(r => r.Parcelas)
             .Where(s => s.DataReferencia == dataReferencia)
+            .AsNoTracking()
             .ToListAsync(ct);
 
-        // Fazer as operações de agregação no cliente (C#)
+        // Buscar apenas os counts de parcelas necessários
+        var resultadoIds = simulacoes.SelectMany(s => s.Resultados).Select(r => r.IdResultado).ToList();
+        var parcelasCounts = await context.Parcelas
+            .Where(p => resultadoIds.Contains(p.IdResultado))
+            .GroupBy(p => p.IdResultado)
+            .Select(g => new { IdResultado = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.IdResultado, x => x.Count, ct);
+
+        // Fazer as agregações no cliente
         var resultado = simulacoes
             .GroupBy(s => new { s.CodigoProduto, s.DescricaoProduto })
             .Select(g => new VolumeSimuladoProdutoDto(
-                CodigoProduto: g.Key.CodigoProduto,
-                DescricaoProduto: g.Key.DescricaoProduto,
-                TaxaMediaJuro: (decimal)g.Average(s => (double)s.TaxaJuros.Taxa),
-                ValorMedioPrestacao: g.SelectMany(s => s.Resultados)
-                    .SelectMany(r => r.Parcelas)
-                    .Any() ? (decimal)g.SelectMany(s => s.Resultados)
-                            .SelectMany(r => r.Parcelas)
-                            .Average(p => (double)p.ValorPrestacao.Valor) : 0m,
-                ValorTotalDesejado: g.Sum(s => s.ValorDesejado.Valor),
-                ValorTotalCredito: g.SelectMany(s => s.Resultados)
+                g.Key.CodigoProduto,
+                g.Key.DescricaoProduto,
+                g.Average(s => s.TaxaJuros.Taxa),
+                g.SelectMany(s => s.Resultados)
+                    .Average(r => r.ValorTotal.Valor / parcelasCounts.GetValueOrDefault(r.IdResultado, 1)),
+                g.Sum(s => s.ValorDesejado.Valor),
+                g.SelectMany(s => s.Resultados)
                     .Sum(r => r.ValorTotal.Valor)
-            ))
-            .ToList();
+            ));
 
         return resultado;
     }
@@ -52,12 +61,12 @@ public class SimulacaoRepository(AppDbContext context) : ISimulacaoRepository
         return await context.Simulacoes.CountAsync(ct);
     }
 
-    // OTIMIZAÇÃO: Método com projeção específica - evita carregar parcelas desnecessárias
+    // ✅ OTIMIZAÇÃO: Projeção direta sem includes desnecessários
     public async Task<IEnumerable<SimulacaoResumoDto>> ListarSimulacoesOtimizadoAsync(int pageNumber, int pageSize, CancellationToken ct)
     {
         // Buscar dados do banco primeiro
         var simulacoes = await context.Simulacoes
-            .Include(s => s.Resultados) // Apenas resultados, sem parcelas
+            .Include(s => s.Resultados) // Necessário para acessar Resultados
             .OrderByDescending(s => s.IdSimulacao)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
@@ -68,8 +77,8 @@ public class SimulacaoRepository(AppDbContext context) : ISimulacaoRepository
         var resultado = simulacoes.Select(s => new SimulacaoResumoDto(
             s.IdSimulacao,
             s.ValorDesejado.Valor,
-            s.PrazoMeses,
-            s.Resultados.Sum(r => r.ValorTotal.Valor) // Usa ValorTotal já calculado
+            s.PrazoMeses.Meses,
+            s.Resultados.Sum(r => r.ValorTotal.Valor)
         ));
 
         return resultado;

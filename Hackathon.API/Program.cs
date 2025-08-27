@@ -6,6 +6,7 @@ using Hackathon.Application.DependencyInjection;
 using Hackathon.Infrastructure.DependencyInjection;
 using Mapster;
 using Microsoft.OpenApi.Models;
+using System.Threading;
 
 var builder = WebApplication.CreateBuilder(args);
 
