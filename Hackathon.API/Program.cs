@@ -7,6 +7,7 @@ using Hackathon.Infrastructure.DependencyInjection;
 using Mapster;
 using Microsoft.OpenApi.Models;
 using System.Threading;
+using Hackathon.Infrastructure.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -79,6 +80,25 @@ ApiMappingProfile.Configure();
 TypeAdapterConfig.GlobalSettings.Compile();
 
 var app = builder.Build();
+
+// ✅ OTIMIZAÇÃO: Inicializar banco ANTES de configurar o pipeline
+// Evita bloqueio na primeira requisição
+if (app.Environment.IsProduction())
+{
+    try
+    {
+        app.Logger.LogInformation("🔄 Inicializando banco de dados em produção...");
+        using var scope = app.Services.CreateScope();
+        var dbInitializer = scope.ServiceProvider.GetRequiredService<IDatabaseInitializationService>();
+        await dbInitializer.InitializeDatabaseAsync();
+        app.Logger.LogInformation("✅ Banco de dados inicializado com sucesso");
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogCritical(ex, "❌ Falha crítica na inicialização do banco de dados");
+        throw;
+    }
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

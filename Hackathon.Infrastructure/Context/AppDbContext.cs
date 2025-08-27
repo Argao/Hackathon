@@ -257,19 +257,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     {
         try
         {
-            var entries = ChangeTracker.Entries();
-            var parcelas = entries.Where(e => e.Entity is Parcela && e.State == EntityState.Added).Count();
-            
-            if (parcelas > 10)
-            {
-                Console.WriteLine($"⚡ BATCH INSERT: {parcelas} parcelas sendo inseridas em lote");
-            }
-            
             var startTime = DateTime.UtcNow;
             var result = await base.SaveChangesAsync(cancellationToken);
             var duration = DateTime.UtcNow - startTime;
             
-            if (duration.TotalMilliseconds > 100)
+            // ✅ OTIMIZAÇÃO: Log apenas se demorar muito (aumentado threshold)
+            if (duration.TotalMilliseconds > 500)
             {
                 Console.WriteLine($"⚠️ SaveChanges demorou {duration.TotalMilliseconds}ms para {result} registros");
             }

@@ -4,8 +4,7 @@ using System.Runtime;
 namespace Hackathon.Infrastructure.Services;
 
 /// <summary>
-/// Serviço responsável por configurar otimizações de performance do sistema
-/// Configura ThreadPool, GC e outras otimizações para alta concorrência
+/// Serviço para configurar otimizações de performance do sistema
 /// </summary>
 public class PerformanceConfigurationService
 {
@@ -16,9 +15,6 @@ public class PerformanceConfigurationService
         _logger = logger;
     }
 
-    /// <summary>
-    /// Configura otimizações de performance para alta concorrência
-    /// </summary>
     public void ConfigurePerformanceOptimizations()
     {
         try
@@ -39,32 +35,30 @@ public class PerformanceConfigurationService
         }
     }
 
-    /// <summary>
-    /// Configura o ThreadPool para alta concorrência
-    /// </summary>
     private void ConfigureThreadPool()
     {
-        var minWorkerThreads = 100;
-        var minCompletionPortThreads = 100;
-        var maxWorkerThreads = Environment.ProcessorCount * 4;
-        var maxCompletionPortThreads = Environment.ProcessorCount * 4;
+        var processorCount = Environment.ProcessorCount;
+        
+        // ✅ OTIMIZAÇÃO: Configuração mais conservadora para reduzir overhead
+        var minWorkerThreads = Math.Min(50, processorCount * 2); // Reduzido de 100 para 50
+        var minCompletionPortThreads = Math.Min(50, processorCount * 2); // Reduzido de 100 para 50
+        var maxWorkerThreads = processorCount * 8; // Aumentado de 4x para 8x para dar mais flexibilidade
+        var maxCompletionPortThreads = processorCount * 8;
 
         ThreadPool.SetMinThreads(minWorkerThreads, minCompletionPortThreads);
         ThreadPool.SetMaxThreads(maxWorkerThreads, maxCompletionPortThreads);
 
-        _logger.LogInformation(
-            "⚡ ThreadPool configurado: Min({MinWorker}, {MinCompletion}) Max({MaxWorker}, {MaxCompletion})",
+        _logger.LogInformation("✅ ThreadPool configurado: Min({MinWorker}/{MinCompletion}), Max({MaxWorker}/{MaxCompletion})", 
             minWorkerThreads, minCompletionPortThreads, maxWorkerThreads, maxCompletionPortThreads);
     }
 
-    /// <summary>
-    /// Configura o Garbage Collector para melhor performance
-    /// </summary>
     private void ConfigureGarbageCollector()
     {
-        // Configurar GC para modo de servidor (melhor para aplicações de alta concorrência)
+        // ✅ OTIMIZAÇÃO: Configurar GC para melhor performance em alta concorrência
         GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
         
-        _logger.LogInformation("🔄 Garbage Collector configurado para modo servidor");
+        // ✅ OTIMIZAÇÃO: Log do modo atual do GC
+        _logger.LogInformation("✅ GC configurado - Server Mode: {IsServerGC}, Processors: {ProcessorCount}", 
+            GCSettings.IsServerGC, Environment.ProcessorCount);
     }
 }
