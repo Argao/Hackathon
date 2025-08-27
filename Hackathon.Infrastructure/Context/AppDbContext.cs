@@ -280,29 +280,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
     private static void ConfigureValueObjectConversions(ModelBuilder modelBuilder)
     {
-        var volumeEntity = modelBuilder.Entity<VolumeSimuladoAgregado>();
-        volumeEntity.HasNoKey();
-        
-        // Conversão para TaxaJuros
-        volumeEntity.Property(e => e.TaxaMediaJuro)
-            .HasConversion(
-                v => v.Taxa,
-                v => TaxaJuros.Create(v).Value);
-
-        // Conversões para ValorMonetario
-        volumeEntity.Property(e => e.ValorMedioPrestacao)
-            .HasConversion(
-                v => v.Valor,
-                v => ValorMonetario.Create(v).Value);
-
-        volumeEntity.Property(e => e.ValorTotalDesejado)
-            .HasConversion(
-                v => v.Valor,
-                v => ValorMonetario.Create(v).Value);
-
-        volumeEntity.Property(e => e.ValorTotalCredito)
-            .HasConversion(
-                v => v.Valor,
-                v => ValorMonetario.Create(v).Value);
+        // Configurações de conversão de Value Objects removidas pois agora usamos DTOs
     }
 }

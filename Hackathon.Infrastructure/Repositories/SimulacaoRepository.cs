@@ -17,7 +17,7 @@ public class SimulacaoRepository(AppDbContext context) : ISimulacaoRepository
         return simulacao;
     }
 
-    public async Task<IEnumerable<VolumeSimuladoAgregado>> ObterVolumeSimuladoPorProdutoAsync(DateOnly dataReferencia, CancellationToken ct)
+    public async Task<IEnumerable<VolumeSimuladoProdutoDto>> ObterVolumeSimuladoPorProdutoAsync(DateOnly dataReferencia, CancellationToken ct)
     {
         // Primeiro, buscar as simulações do banco
         var simulacoes = await context.Simulacoes
@@ -29,20 +29,19 @@ public class SimulacaoRepository(AppDbContext context) : ISimulacaoRepository
         // Fazer as operações de agregação no cliente (C#)
         var resultado = simulacoes
             .GroupBy(s => new { s.CodigoProduto, s.DescricaoProduto })
-            .Select(g => new VolumeSimuladoAgregado
-            {
-                CodigoProduto = g.Key.CodigoProduto,
-                DescricaoProduto = g.Key.DescricaoProduto,
-                TaxaMediaJuro = TaxaJuros.Create((decimal)g.Average(s => (double)s.TaxaJuros.Taxa)).Value,
-                ValorMedioPrestacao = g.SelectMany(s => s.Resultados)
+            .Select(g => new VolumeSimuladoProdutoDto(
+                CodigoProduto: g.Key.CodigoProduto,
+                DescricaoProduto: g.Key.DescricaoProduto,
+                TaxaMediaJuro: (decimal)g.Average(s => (double)s.TaxaJuros.Taxa),
+                ValorMedioPrestacao: g.SelectMany(s => s.Resultados)
                     .SelectMany(r => r.Parcelas)
-                    .Any() ? ValorMonetario.Create((decimal)g.SelectMany(s => s.Resultados)
+                    .Any() ? (decimal)g.SelectMany(s => s.Resultados)
                             .SelectMany(r => r.Parcelas)
-                            .Average(p => (double)p.ValorPrestacao.Valor)).Value : ValorMonetario.Zero,
-                ValorTotalDesejado = ValorMonetario.Create(g.Sum(s => s.ValorDesejado.Valor)).Value,
-                ValorTotalCredito = ValorMonetario.Create(g.SelectMany(s => s.Resultados)
-                    .Sum(r => r.ValorTotal.Valor)).Value
-            })
+                            .Average(p => (double)p.ValorPrestacao.Valor) : 0m,
+                ValorTotalDesejado: g.Sum(s => s.ValorDesejado.Valor),
+                ValorTotalCredito: g.SelectMany(s => s.Resultados)
+                    .Sum(r => r.ValorTotal.Valor)
+            ))
             .ToList();
 
         return resultado;
@@ -56,20 +55,23 @@ public class SimulacaoRepository(AppDbContext context) : ISimulacaoRepository
     // OTIMIZAÇÃO: Método com projeção específica - evita carregar parcelas desnecessárias
     public async Task<IEnumerable<SimulacaoResumoDto>> ListarSimulacoesOtimizadoAsync(int pageNumber, int pageSize, CancellationToken ct)
     {
-        // Projeção direta no banco - sem carregar parcelas
-        var query = context.Simulacoes
+        // Buscar dados do banco primeiro
+        var simulacoes = await context.Simulacoes
             .Include(s => s.Resultados) // Apenas resultados, sem parcelas
-            .Select(s => new SimulacaoResumoDto(
-                s.IdSimulacao,
-                s.ValorDesejado.Valor,
-                s.PrazoMeses,
-                s.Resultados.Sum(r => r.ValorTotal.Valor) // Usa ValorTotal já calculado
-            ))
-            .OrderByDescending(s => s.Id)
+            .OrderByDescending(s => s.IdSimulacao)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
-            .AsNoTracking();
+            .AsNoTracking()
+            .ToListAsync(ct);
 
-        return await query.ToListAsync(ct);
+        // Fazer a projeção no cliente
+        var resultado = simulacoes.Select(s => new SimulacaoResumoDto(
+            s.IdSimulacao,
+            s.ValorDesejado.Valor,
+            s.PrazoMeses,
+            s.Resultados.Sum(r => r.ValorTotal.Valor) // Usa ValorTotal já calculado
+        ));
+
+        return resultado;
     }
 }

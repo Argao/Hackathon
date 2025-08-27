@@ -23,7 +23,14 @@ public class ObterVolumeSimuladoHandler : IRequestHandler<ObterVolumeSimuladoQue
     {
         var dadosAgregados = await _repository.ObterVolumeSimuladoPorProdutoAsync(request.DataReferencia, cancellationToken);
         
-        var produtos = dadosAgregados.Adapt<List<VolumeSimuladoProdutoResult>>();
+        var produtos = dadosAgregados.Select(dto => new VolumeSimuladoProdutoResult(
+            dto.CodigoProduto,
+            dto.DescricaoProduto,
+            dto.TaxaMediaJuro,
+            dto.ValorMedioPrestacao,
+            dto.ValorTotalDesejado,
+            dto.ValorTotalCredito
+        )).ToList();
 
         return new VolumeSimuladoResult(
             DataReferencia: request.DataReferencia,

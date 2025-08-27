@@ -1,9 +1,7 @@
 using Hackathon.Application.Handlers;
 using Hackathon.Application.Queries;
 using Hackathon.Application.Results;
-using Hackathon.Domain.Entities;
 using Hackathon.Domain.Interfaces.Repositories;
-using Hackathon.Domain.ValueObjects;
 using Moq;
 
 namespace Hackathon.Application.Tests.Handlers;
@@ -27,17 +25,16 @@ public class ObterVolumeSimuladoHandlerTests
         var query = new ObterVolumeSimuladoQuery(dataReferencia);
         var ct = CancellationToken.None;
 
-        var dadosAgregados = new List<VolumeSimuladoAgregado>
+        var dadosAgregados = new List<VolumeSimuladoProdutoDto>
         {
-            new VolumeSimuladoAgregado
-            {
-                CodigoProduto = 1,
-                DescricaoProduto = "Produto Teste",
-                TaxaMediaJuro = TaxaJuros.Create(0.015m).Value,
-                ValorMedioPrestacao = ValorMonetario.Create(1000m).Value,
-                ValorTotalDesejado = ValorMonetario.Create(10000m).Value,
-                ValorTotalCredito = ValorMonetario.Create(12000m).Value
-            }
+            new VolumeSimuladoProdutoDto(
+                CodigoProduto: 1,
+                DescricaoProduto: "Produto Teste",
+                TaxaMediaJuro: 0.015m,
+                ValorMedioPrestacao: 1000m,
+                ValorTotalDesejado: 10000m,
+                ValorTotalCredito: 12000m
+            )
         };
 
         _mockRepository
@@ -74,7 +71,7 @@ public class ObterVolumeSimuladoHandlerTests
 
         _mockRepository
             .Setup(x => x.ObterVolumeSimuladoPorProdutoAsync(dataReferencia, ct))
-            .ReturnsAsync(new List<VolumeSimuladoAgregado>());
+            .ReturnsAsync(new List<VolumeSimuladoProdutoDto>());
 
         // Act
         var result = await _handler.Handle(query, ct);

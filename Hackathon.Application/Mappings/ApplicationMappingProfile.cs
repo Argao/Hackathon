@@ -38,9 +38,7 @@ public static class ApplicationMappingProfile
         TypeAdapterConfig<Parcela, ParcelaCalculada>
             .NewConfig();
 
-        // Volume Entity mappings
-        TypeAdapterConfig<VolumeSimuladoAgregado, VolumeSimuladoProdutoResult>
-            .NewConfig();
+        // Volume Entity mappings - Removido pois agora usamos DTO direto
 
         TypeAdapterConfig<Parcela, ParcelaCalculada>
             .NewConfig()

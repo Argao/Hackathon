@@ -49,7 +49,7 @@ public class ISimulacaoRepositoryTests
 
         // Assert
         metodo.Should().NotBeNull();
-        metodo!.ReturnType.Should().Be(typeof(Task<IEnumerable<VolumeSimuladoAgregado>>));
+        metodo!.ReturnType.Should().Be(typeof(Task<IEnumerable<VolumeSimuladoProdutoDto>>));
         metodo.IsPublic.Should().BeTrue();
         metodo.IsVirtual.Should().BeTrue();
         metodo.IsAbstract.Should().BeTrue();

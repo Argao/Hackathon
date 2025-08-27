@@ -5,7 +5,7 @@ namespace Hackathon.Domain.Interfaces.Repositories;
 public interface ISimulacaoRepository
 {
     Task<Simulacao> AdicionarAsync(Simulacao simulacao, CancellationToken ct);
-    Task<IEnumerable<VolumeSimuladoAgregado>> ObterVolumeSimuladoPorProdutoAsync(DateOnly dataReferencia, CancellationToken ct);
+    Task<IEnumerable<VolumeSimuladoProdutoDto>> ObterVolumeSimuladoPorProdutoAsync(DateOnly dataReferencia, CancellationToken ct);
     Task<int> ObterTotalSimulacoesAsync(CancellationToken ct);
     
     // OTIMIZAÇÃO: Método com projeção específica - evita carregar parcelas desnecessárias
@@ -20,4 +20,16 @@ public record SimulacaoResumoDto(
     decimal ValorDesejado,
     int Prazo,
     decimal ValorTotalParcelas
+);
+
+/// <summary>
+/// DTO para volume simulado por produto - usado para consultas agregadas
+/// </summary>
+public record VolumeSimuladoProdutoDto(
+    int CodigoProduto,
+    string DescricaoProduto,
+    decimal TaxaMediaJuro,
+    decimal ValorMedioPrestacao,
+    decimal ValorTotalDesejado,
+    decimal ValorTotalCredito
 );

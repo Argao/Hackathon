@@ -148,7 +148,14 @@ public class SimulacaoService : ISimulacaoService
 
         var dadosAgregados = await _simulacaoRepository.ObterVolumeSimuladoPorProdutoAsync(query.DataReferencia, ct);
 
-        var produtos = dadosAgregados.Adapt<List<VolumeSimuladoProdutoResult>>();
+        var produtos = dadosAgregados.Select(dto => new VolumeSimuladoProdutoResult(
+            dto.CodigoProduto,
+            dto.DescricaoProduto,
+            dto.TaxaMediaJuro,
+            dto.ValorMedioPrestacao,
+            dto.ValorTotalDesejado,
+            dto.ValorTotalCredito
+        )).ToList();
 
         var result = new VolumeSimuladoResult(
             DataReferencia: query.DataReferencia,
