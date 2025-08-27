@@ -61,17 +61,15 @@ public class DatabaseInitializationMiddleware
         {
             logger.LogError(ex, "Erro crítico ao inicializar banco de dados: {Message}", ex.Message);
             
-            // Em desenvolvimento, permitir continuar com erro
+            // Em desenvolvimento, log mais detalhado mas ainda falha
             if (_environment.IsDevelopment())
             {
-                logger.LogWarning("Continuando em modo desenvolvimento apesar do erro...");
+                logger.LogWarning("Detalhes adicionais para desenvolvimento: {StackTrace}", ex.StackTrace);
             }
-            else
-            {
-                // Em produção, falhar rápido
-                logger.LogCritical("Falha crítica na inicialização do banco. Encerrando aplicação.");
-                throw;
-            }
+            
+            // Em ambos os ambientes, falhar rápido para garantir consistência
+            logger.LogCritical("Falha crítica na inicialização do banco. Encerrando aplicação.");
+            throw;
         }
     }
 }

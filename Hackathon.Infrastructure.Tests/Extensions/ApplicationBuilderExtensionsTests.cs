@@ -31,7 +31,7 @@ public class ApplicationBuilderExtensionsTests
     }
 
     [Fact]
-    public void UseInfrastructureDatabaseInitialization_EmDesenvolvimento_NaoDeveInicializarBanco()
+    public void UseInfrastructureDatabaseInitialization_EmDesenvolvimento_DeveInicializarBanco()
     {
         // Arrange
         var services = new ServiceCollection();
@@ -57,6 +57,23 @@ public class ApplicationBuilderExtensionsTests
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddSingleton<IHostEnvironment>(new TestHostEnvironment { EnvironmentName = "Production" });
+        services.AddScoped<IDatabaseInitializationService, FailingDatabaseInitializationService>();
+        
+        var serviceProvider = services.BuildServiceProvider();
+        var app = new ApplicationBuilder(serviceProvider);
+
+        // Act & Assert
+        var exception = Assert.Throws<InvalidOperationException>(() => app.UseInfrastructureDatabaseInitialization());
+        Assert.Contains("Erro simulado na inicialização do banco", exception.Message);
+    }
+
+    [Fact]
+    public void UseInfrastructureDatabaseInitialization_ComErroEmDesenvolvimento_DevePropagarExcecao()
+    {
+        // Arrange
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddSingleton<IHostEnvironment>(new TestHostEnvironment { EnvironmentName = "Development" });
         services.AddScoped<IDatabaseInitializationService, FailingDatabaseInitializationService>();
         
         var serviceProvider = services.BuildServiceProvider();
