@@ -13,7 +13,6 @@ public sealed class Simulacao
     public ValorMonetario ValorDesejado { get; private set; }
     public PrazoMeses PrazoMeses { get; private set; }
     public DateOnly DataReferencia { get; private set; }
-    public string EnvelopJson { get; private set; } = string.Empty;
     
     public ICollection<ResultadoSimulacao> Resultados { get; private set; } = new List<ResultadoSimulacao>();
 
@@ -44,14 +43,6 @@ public sealed class Simulacao
         };
     }
 
-    public void DefinirEnvelopJson(string envelopJson)
-    {
-        if (string.IsNullOrWhiteSpace(envelopJson))
-            throw new BusinessRuleException("Envelop JSON é obrigatório", "SIM003");
-
-        EnvelopJson = envelopJson;
-    }
-
     public void AdicionarResultado(ResultadoSimulacao resultado)
     {
         if (resultado == null)
@@ -70,6 +61,4 @@ public sealed class Simulacao
             AdicionarResultado(resultado);
         }
     }
-
-    public void SetPrazoMeses(short prazo) => PrazoMeses = PrazoMeses.Create(prazo).Value;
 }

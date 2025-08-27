@@ -141,39 +141,6 @@ public class SimulacaoTests
     }
 
     [Fact]
-    public void DefinirEnvelopJson_ComJsonValido_DeveDefinir()
-    {
-        // Arrange
-        var taxaJuros = TaxaJuros.Create(0.015m).Value;
-        var valorDesejado = ValorMonetario.Create(10000.00m).Value;
-        var prazoMeses = PrazoMeses.Create(24).Value;
-        var dataReferencia = DateOnly.FromDateTime(DateTime.Today);
-        var simulacao = Simulacao.Create(123, "Produto", taxaJuros, valorDesejado, prazoMeses, dataReferencia);
-        var envelopJson = "{\"teste\": \"valor\"}";
-
-        // Act
-        simulacao.DefinirEnvelopJson(envelopJson);
-
-        // Assert
-        simulacao.EnvelopJson.Should().Be(envelopJson);
-    }
-
-    [Fact]
-    public void DefinirEnvelopJson_ComJsonVazio_DeveLancarExcecao()
-    {
-        // Arrange
-        var taxaJuros = TaxaJuros.Create(0.015m).Value;
-        var valorDesejado = ValorMonetario.Create(10000.00m).Value;
-        var prazoMeses = PrazoMeses.Create(24).Value;
-        var dataReferencia = DateOnly.FromDateTime(DateTime.Today);
-        var simulacao = Simulacao.Create(123, "Produto", taxaJuros, valorDesejado, prazoMeses, dataReferencia);
-
-        // Act & Assert
-        var action = () => simulacao.DefinirEnvelopJson("");
-        action.Should().Throw<BusinessRuleException>().WithMessage("*obrigatório*");
-    }
-
-    [Fact]
     public void Classe_DeveSerSealed()
     {
         typeof(Simulacao).IsSealed.Should().BeTrue();

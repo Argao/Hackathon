@@ -84,11 +84,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
                 .HasColumnName("DT_REFERENCIA")
                 .IsRequired();
             
-            entity.Property(e => e.EnvelopJson)
-                .HasColumnName("TX_ENVELOP_JSON")
-                .HasColumnType("text")
-                .IsRequired();
-            
             // Relacionamento com ResultadoSimulacao
             entity.HasMany(e => e.Resultados)
                 .WithOne(r => r.Simulacao)
