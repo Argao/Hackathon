@@ -1,4 +1,4 @@
-using Hackathon.Application.DependencyInjection;
+using Hackathon.Application.Extensions;
 using Hackathon.Application.Interfaces;
 using Hackathon.Application.Services;
 using Hackathon.Domain.Interfaces.Repositories;

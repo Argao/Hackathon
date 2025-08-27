@@ -2,10 +2,10 @@ using System.Data;
 using System.Reflection;
 using Hackathon.API.Mappings;
 using Hackathon.API.Middleware;
-using Hackathon.Application.DependencyInjection;
 using Mapster;
 using Microsoft.OpenApi.Models;
 using System.Threading;
+using Hackathon.Application.Extensions;
 using Hackathon.Infrastructure.Extensions;
 using Hackathon.Infrastructure.Interfaces;
 

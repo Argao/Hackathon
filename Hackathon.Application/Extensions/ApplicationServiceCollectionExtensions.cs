@@ -1,14 +1,14 @@
+using System.Reflection;
 using FluentValidation;
 using Hackathon.Application.Behaviors;
 using Hackathon.Application.Interfaces;
-using Hackathon.Application.Services;
 using Hackathon.Application.Mappings;
+using Hackathon.Application.Services;
 using Mapster;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
-using System.Reflection;
 
-namespace Hackathon.Application.DependencyInjection;
+namespace Hackathon.Application.Extensions;
 
 /// <summary>
 /// Configuração de DI seguindo princípios SOLID
