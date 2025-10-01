@@ -4,6 +4,8 @@ services:
   # ===========================
   api-dev:
     build: .
+    env_file:
+      - .env
     ports:
       - "5000:8080"
     environment:
@@ -13,9 +15,7 @@ services:
       - ENABLE_SWAGGER=true
       - ENABLE_DETAILED_LOGS=true
       - DATABASE_INITIALIZATION_TIMEOUT=30
-      - ConnectionStrings__ProdutosDb=Server=dbhackathon.database.windows.net,1433;Database=hack;User ID=hack;Password=Password23;Encrypt=True;TrustServerCertificate=True;MultipleActiveResultSets=True;Connection Timeout=30;
       - ConnectionStrings__LocalDb=Data Source=/app/data/hack.db
-      - ConnectionStrings__EventHub=Endpoint=sb://eventhack.servicebus.windows.net/;SharedAccessKeyName=hack;SharedAccessKey=HeHeVaVqyVkntO2FnjQcs2Ilh/4MUDo4y+AEhKp8z+g=;EntityPath=simulacoes
     volumes:
       - ./data:/app/data
     healthcheck:
@@ -32,6 +32,8 @@ services:
   # ===========================
   api-prod:
     build: .
+    env_file:
+      - .env
     ports:
       - "8080:8080"
     environment:
@@ -41,9 +43,7 @@ services:
       - ENABLE_SWAGGER=false
       - ENABLE_DETAILED_LOGS=false
       - DATABASE_INITIALIZATION_TIMEOUT=30
-      - ConnectionStrings__ProdutosDb=Server=dbhackathon.database.windows.net,1433;Database=hack;User ID=hack;Password=Password23;Encrypt=True;TrustServerCertificate=True;MultipleActiveResultSets=True;Connection Timeout=30;
       - ConnectionStrings__LocalDb=Data Source=/app/data/hack.db
-      - ConnectionStrings__EventHub=Endpoint=sb://eventhack.servicebus.windows.net/;SharedAccessKeyName=hack;SharedAccessKey=HeHeVaVqyVkntO2FnjQcs2Ilh/4MUDo4y+AEhKp8z+g=;EntityPath=simulacoes
     volumes:
       - ./data:/app/data
     healthcheck:

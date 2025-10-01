@@ -20,14 +20,8 @@ public class DatabaseInitializationService : IDatabaseInitializationService
     {
         try
         {
-    
-            
-            // Garantir que o diretório do banco existe
             await EnsureDatabaseDirectoryExistsAsync();
-            
             await _context.Database.MigrateAsync();
-            
-
         }
         catch (Exception ex)
         {
@@ -43,22 +37,18 @@ public class DatabaseInitializationService : IDatabaseInitializationService
             var connectionString = _context.Database.GetConnectionString();
             if (string.IsNullOrEmpty(connectionString))
             {
-    
                 return;
             }
 
-            // Extrair o caminho do banco da connection string
             var dataSourceIndex = connectionString.IndexOf("Data Source=", StringComparison.OrdinalIgnoreCase);
             if (dataSourceIndex == -1)
-            {
-    
+            { 
                 return;
             }
 
-            var dataSource = connectionString.Substring(dataSourceIndex + 12); // "Data Source=" tem 12 caracteres
+            var dataSource = connectionString.Substring(dataSourceIndex + 12);
             var dbPath = dataSource.Trim();
-            
-            // Se o caminho for relativo, converter para absoluto
+
             if (!Path.IsPathRooted(dbPath))
             {
                 dbPath = Path.GetFullPath(dbPath);
@@ -68,16 +58,11 @@ public class DatabaseInitializationService : IDatabaseInitializationService
             if (!string.IsNullOrEmpty(dbDirectory) && !Directory.Exists(dbDirectory))
             {
                 Directory.CreateDirectory(dbDirectory);
-    
-            }
-            else if (!string.IsNullOrEmpty(dbDirectory))
-            {
-
             }
         }
         catch (Exception ex)
         {
-
+            _logger.LogWarning(ex, "Falha ao tentar criar diretório para o banco de dados.");
         }
     }
 }
