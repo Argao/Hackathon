@@ -39,5 +39,5 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
           args: >
-            -Dsonar.projectKey=Hackathon
+            -Dsonar.projectKey=Argao_Hackathon
             -Dsonar.organization=argao
