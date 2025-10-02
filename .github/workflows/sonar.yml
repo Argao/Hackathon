@@ -1,0 +1,43 @@
+name: SonarCloud (SAST)
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - run: dotnet restore
+      - run: dotnet build --configuration Release
+
+      - name: Dependency audit
+        run: |
+          set -e
+          dotnet list package --vulnerable --include-transitive > vuln.txt || true
+          if grep -Eqi 'Severity:.*Critical' vuln.txt; then
+            echo 'Critical vulnerabilities detected in dependencies:'
+            cat vuln.txt
+            exit 1
+          fi
+          echo 'No Critical dependency vulnerabilities found.'
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.projectKey=Hackathon
+            -Dsonar.organization=argao

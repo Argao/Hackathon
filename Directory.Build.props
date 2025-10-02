@@ -1,0 +1,18 @@
+<Project>
+    <PropertyGroup>
+        <Nullable>enable</Nullable>
+        <AnalysisLevel>latest</AnalysisLevel>
+        <AnalysisMode>AllEnabledByDefault</AnalysisMode>
+        <!-- Não torne tudo error; foque segurança via .editorconfig -->
+    </PropertyGroup>
+    <ItemGroup>
+        <!-- Regras Microsoft (CA*), inclusive segurança/cripto -->
+        <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="9.*" PrivateAssets="all" />
+        <!-- SonarAnalyzer local (alinha IDE com servidor) -->
+        <PackageReference Include="SonarAnalyzer.CSharp" Version="9.*" PrivateAssets="all" />
+        <!-- SecurityCodeScan: SQLi, Path Traversal, XSS etc. -->
+        <PackageReference Include="SecurityCodeScan.VS2019" Version="5.*" PrivateAssets="all" />
+        <!-- DevSkim (padrões perigosos comuns) -->
+        <PackageReference Include="Microsoft.DevSkim" Version="0.*" PrivateAssets="all" />
+    </ItemGroup>
+</Project>
