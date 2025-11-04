@@ -77,9 +77,7 @@ project.assets.json
 ## =========================
 # Variáveis de ambiente
 .env
-.env.*
-**/.env
-**/.env.*
+
 
 # AppSettings locais (mantenha os que NÃO têm segredos)
 appsettings.Local.json
