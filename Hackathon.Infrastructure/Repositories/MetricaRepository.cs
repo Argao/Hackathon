@@ -44,8 +44,19 @@ public class MetricaRepository : IMetricaRepository
     {
         try
         {
-            var dataInicio = dataReferencia.ToDateTime(TimeOnly.MinValue);
-            var dataFim = dataReferencia.ToDateTime(TimeOnly.MaxValue);
+            // Interpretar `dataReferencia` como data LOCAL (entrada do usuário) e
+            // convertê-la para UTC para comparar com `DataHora` que é gravada em UTC
+            // (DateTime.UtcNow). Isso evita que uma métrica registrada em UTC no
+            // início do dia seguinte seja atribuída ao dia anterior/seguinte
+            // incorretamente quando o servidor e o usuário estiverem em fusos
+            // distintos.
+            var localStart = DateTime.SpecifyKind(
+                dataReferencia.ToDateTime(TimeOnly.MinValue), DateTimeKind.Local);
+            var localEnd = DateTime.SpecifyKind(
+                dataReferencia.ToDateTime(TimeOnly.MaxValue), DateTimeKind.Local);
+
+            var dataInicio = localStart.ToUniversalTime();
+            var dataFim = localEnd.ToUniversalTime();
 
             var metricas = await _context.Metricas
                 .Where(m => m.DataHora >= dataInicio && m.DataHora <= dataFim)
