@@ -1,6 +1,6 @@
+using Hackathon.Application.Exceptions;
 using Hackathon.Application.Queries;
 using Hackathon.Application.Results;
-using Hackathon.Domain.Exceptions;
 using Hackathon.Domain.Interfaces.Repositories;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -28,8 +28,9 @@ public class ObterTelemetriaHandler : IRequestHandler<ObterTelemetriaQuery, Tele
         
         if (!metricasAgregadas.Any())
         {
-
-            throw new SimulacaoException($"Nenhum dado de telemetria encontrado para a data {dataReferencia:yyyy-MM-dd}");
+            throw new NotFoundAppException(
+                message: $"Nenhum dado de telemetria encontrado para a data {dataReferencia:yyyy-MM-dd}",
+                resourceId: dataReferencia.ToString("yyyy-MM-dd"));
         }
 
         var telemetriasPorApi = metricasAgregadas

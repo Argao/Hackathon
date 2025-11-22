@@ -1,7 +1,7 @@
+using Hackathon.Application.Exceptions;
 using Hackathon.Application.Queries;
 using Hackathon.Application.Results;
 using Hackathon.Application.Services;
-using Hackathon.Domain.Exceptions;
 using Mapster;
 using MediatR;
 
@@ -27,7 +27,9 @@ public class ObterVolumeSimuladoHandler : IRequestHandler<ObterVolumeSimuladoQue
         
         if (!dadosAgregados.Any())
         {
-            throw new SimulacaoException($"Nenhum dado de volume simulado encontrado para a data {request.DataReferencia:yyyy-MM-dd}");
+            throw new NotFoundAppException(
+                message: $"Nenhum dado de volume simulado encontrado para a data {request.DataReferencia:yyyy-MM-dd}",
+                resourceId: request.DataReferencia.ToString("yyyy-MM-dd"));
         }
         
         var produtos = dadosAgregados.Select(dto => new VolumeSimuladoProdutoResult(

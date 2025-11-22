@@ -1,3 +1,4 @@
+using Hackathon.Application.Exceptions;
 using Hackathon.Application.Handlers;
 using Hackathon.Application.Queries;
 using Hackathon.Application.Results;
@@ -64,7 +65,7 @@ public class ObterTelemetriaHandlerTests
             .ReturnsAsync(new List<MetricaAgregada>());
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<Hackathon.Domain.Exceptions.SimulacaoException>(
+        var exception = await Assert.ThrowsAsync<NotFoundAppException>(
             () => _handler.Handle(query, ct));
 
         exception.Message.Should().Contain("Nenhum dado de telemetria encontrado");

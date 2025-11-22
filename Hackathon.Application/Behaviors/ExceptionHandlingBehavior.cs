@@ -1,4 +1,7 @@
-using Hackathon.Domain.Exceptions;
+using Hackathon.Application.Commands;
+using Hackathon.Application.Exceptions;
+using Hackathon.Application.Interfaces;
+using Hackathon.Application.Results;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -20,21 +23,21 @@ public class ExceptionHandlingBehavior<TRequest, TResponse> : IPipelineBehavior<
         {
             return await next();
         }
-        catch (ValidationException ex)
+        catch (ApplicationValidationException ex)
         {
             _logger.LogWarning("Erro de validação em {RequestName}: {Errors}", 
                 typeof(TRequest).Name, string.Join("; ", ex.Errors));
             throw;
         }
-        catch (BusinessRuleException ex)
+        catch (BusinessRuleAppException ex)
         {
-                        _logger.LogWarning("Regra de negócio violada em {RequestName}: {Message} (Código: {RuleCode})",
+            _logger.LogWarning("Regra de negócio violada em {RequestName}: {Message} (Código: {RuleCode})",
                 typeof(TRequest).Name, ex.Message, ex.RuleCode);
             throw;
         }
-        catch (SimulacaoException ex)
+        catch (SimulacaoAppException ex)
         {
-                        _logger.LogWarning("Erro na simulação em {RequestName}: {Message}",
+            _logger.LogWarning("Erro na simulação em {RequestName}: {Message}",
                 typeof(TRequest).Name, ex.Message);
             throw;
         }

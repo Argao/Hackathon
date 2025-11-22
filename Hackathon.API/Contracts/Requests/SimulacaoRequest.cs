@@ -1,7 +1,7 @@
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
-using Hackathon.Domain.ValueObjects;
+using Hackathon.API.Constants;
 
 namespace Hackathon.API.Contracts.Requests;
 
@@ -19,11 +19,11 @@ namespace Hackathon.API.Contracts.Requests;
 public sealed record SimulacaoRequest(
     [property: JsonPropertyName("valorDesejado")]
     [property: DefaultValue(900.00)]
-    [Range(1, (double)RegrasNegocio.Valores.VALOR_MAXIMO_EMPRESTIMO, ErrorMessage = "Valor inválido")]
+    [Range((double)ApiConstraints.ValorMinimoEmprestimo, (double)ApiConstraints.ValorMaximoEmprestimo, ErrorMessage = "Valor inválido")]
     decimal ValorDesejado,
     
     [property: JsonPropertyName("prazo")]
     [property: DefaultValue(5)]
-    [Range(1, RegrasNegocio.Prazos.PRAZO_MAXIMO_API, ErrorMessage = "Prazo inválido")]
+    [Range(ApiConstraints.PrazoMinimoMeses, ApiConstraints.PrazoMaximoMeses, ErrorMessage = "Prazo inválido")]
     int Prazo
 );

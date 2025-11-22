@@ -2,7 +2,7 @@ using System.Net;
 using System.Text.Json;
 using FluentAssertions;
 using Hackathon.API.Middleware;
-using Hackathon.Domain.Exceptions;
+using Hackathon.Application.Exceptions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -43,7 +43,7 @@ public class GlobalExceptionHandlerTests
     public async Task InvokeAsync_QuandoValidationException_DeveRetornarBadRequest()
     {
         // Arrange
-        var validationException = new ValidationException("Erro de validação");
+        var validationException = new ApplicationValidationException(new[] { "Erro de validação" });
         _mockNext.Setup(x => x(It.IsAny<HttpContext>())).ThrowsAsync(validationException);
 
         // Act
@@ -65,7 +65,7 @@ public class GlobalExceptionHandlerTests
     public async Task InvokeAsync_QuandoSimulacaoException_DeveRetornarUnprocessableEntity()
     {
         // Arrange
-        var simulacaoException = new SimulacaoException("Erro na simulação");
+        var simulacaoException = new SimulacaoAppException("Erro na simulação");
         _mockNext.Setup(x => x(It.IsAny<HttpContext>())).ThrowsAsync(simulacaoException);
 
         // Act
@@ -87,7 +87,7 @@ public class GlobalExceptionHandlerTests
     public async Task InvokeAsync_QuandoProdutoNotFoundException_DeveRetornarNotFound()
     {
         // Arrange
-        var produtoNotFoundException = new ProdutoNotFoundException("PROD001");
+        var produtoNotFoundException = new NotFoundAppException("Produto com código 'PROD001' não encontrado.", "PROD001");
         _mockNext.Setup(x => x(It.IsAny<HttpContext>())).ThrowsAsync(produtoNotFoundException);
 
         // Act
@@ -103,14 +103,14 @@ public class GlobalExceptionHandlerTests
         response.GetProperty("statusCode").GetInt32().Should().Be((int)HttpStatusCode.NotFound);
         response.GetProperty("message").GetString().Should().Be("Produto com código 'PROD001' não encontrado.");
         response.GetProperty("details").GetProperty("error").GetString().Should().Be("Produto com código 'PROD001' não encontrado.");
-        response.GetProperty("details").GetProperty("codigoProduto").GetString().Should().Be("PROD001");
+        response.GetProperty("details").GetProperty("resourceId").GetString().Should().Be("PROD001");
     }
 
     [Fact]
     public async Task InvokeAsync_QuandoDomainException_DeveRetornarBadRequest()
     {
         // Arrange
-        var domainException = new ValidationException("Erro de domínio");
+        var domainException = new ApplicationValidationException(new[] { "Erro de domínio" });
         _mockNext.Setup(x => x(It.IsAny<HttpContext>())).ThrowsAsync(domainException);
 
         // Act
@@ -192,7 +192,7 @@ public class GlobalExceptionHandlerTests
     public async Task InvokeAsync_QuandoValidationExceptionComErros_DeveIncluirErrosNaResposta()
     {
         // Arrange
-        var validationException = new ValidationException(new List<string> { "Erro 1", "Erro 2" });
+        var validationException = new ApplicationValidationException(new List<string> { "Erro 1", "Erro 2" });
         _mockNext.Setup(x => x(It.IsAny<HttpContext>())).ThrowsAsync(validationException);
 
         // Act
@@ -211,7 +211,7 @@ public class GlobalExceptionHandlerTests
     public async Task InvokeAsync_QuandoBusinessRuleException_DeveRetornarBadRequest()
     {
         // Arrange
-        var businessRuleException = new BusinessRuleException("Regra de negócio violada", "RULE001");
+        var businessRuleException = new BusinessRuleAppException("Regra de negócio violada", "RULE001");
         _mockNext.Setup(x => x(It.IsAny<HttpContext>())).ThrowsAsync(businessRuleException);
 
         // Act

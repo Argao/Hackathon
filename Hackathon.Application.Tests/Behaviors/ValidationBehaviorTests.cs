@@ -1,5 +1,6 @@
 using Hackathon.Application.Behaviors;
 using Hackathon.Application.Commands;
+using Hackathon.Application.Exceptions;
 using Hackathon.Application.Interfaces;
 using Hackathon.Domain.Exceptions;
 using MediatR;
@@ -59,8 +60,8 @@ public class ValidationBehaviorTests
 
         // Act & Assert
         var action = () => _behavior.Handle(request, next, ct);
-        await action.Should().ThrowAsync<ValidationException>()
-            .WithMessage("*Valor deve ser maior que zero*");
+        await action.Should().ThrowAsync<ApplicationValidationException>()
+            .WithMessage("*Erro de validação*");
     }
 
     [Fact]

@@ -31,23 +31,10 @@ public class TelemetriaController(IMediator mediator) : ControllerBase
         [FromQuery] TelemetriaRequest request,
         CancellationToken ct = default)
     {
-        try
-        {
-            var query = new ObterTelemetriaQuery(request.DataReferencia);
-            var result = await mediator.Send(query, ct);
-            
-            var response = result.Adapt<TelemetriaResponse>();
-            
-            return Ok(response);
-        }
-        catch (Hackathon.Domain.Exceptions.SimulacaoException ex) when (ex.Message.Contains("Nenhum dado de telemetria encontrado"))
-        {
-            return NotFound(new 
-            { 
-                message = "Nenhum dado de telemetria encontrado para a data especificada",
-                dataReferencia = request.DataReferencia
-            });
-        }
+        var query = new ObterTelemetriaQuery(request.DataReferencia);
+        var result = await mediator.Send(query, ct);
+        var response = result.Adapt<TelemetriaResponse>();
+        return Ok(response);
     }
 
     /// <summary>
