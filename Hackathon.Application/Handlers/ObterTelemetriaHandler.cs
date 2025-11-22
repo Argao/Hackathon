@@ -28,7 +28,9 @@ public class ObterTelemetriaHandler : IRequestHandler<ObterTelemetriaQuery, Tele
         
         if (!metricasAgregadas.Any())
         {
-            throw new SimulacaoAppException($"Nenhum dado de telemetria encontrado para a data {dataReferencia:yyyy-MM-dd}");
+            throw new NotFoundAppException(
+                message: $"Nenhum dado de telemetria encontrado para a data {dataReferencia:yyyy-MM-dd}",
+                resourceId: dataReferencia.ToString("yyyy-MM-dd"));
         }
 
         var telemetriasPorApi = metricasAgregadas

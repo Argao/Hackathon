@@ -2,9 +2,9 @@ using FluentAssertions;
 using Hackathon.API.Controllers;
 using Hackathon.API.Contracts.Requests;
 using Hackathon.API.Contracts.Responses;
+using Hackathon.Application.Exceptions;
 using Hackathon.Application.Queries;
 using Hackathon.Application.Results;
-using Hackathon.Domain.Exceptions;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
@@ -71,17 +71,12 @@ public class TelemetriaControllerTests
 
         _mockMediator
             .Setup(x => x.Send(It.IsAny<ObterTelemetriaQuery>(), It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new SimulacaoException("Nenhum dado de telemetria encontrado para a data 2024-01-15"));
+            .ThrowsAsync(new NotFoundAppException("Nenhum dado de telemetria encontrado para a data 2024-01-15"));
 
-        // Act
-        var result = await _controller.ObterTelemetriaPorDia(request);
-
-        // Assert
-        result.Should().NotBeNull();
-        result.Result.Should().BeOfType<NotFoundObjectResult>();
-        
-        var notFoundResult = result.Result as NotFoundObjectResult;
-        notFoundResult!.Value.Should().NotBeNull();
+        // Act & Assert
+        var action = async () => await _controller.ObterTelemetriaPorDia(request);
+        await action.Should().ThrowAsync<NotFoundAppException>()
+            .WithMessage("*Nenhum dado de telemetria encontrado*");
 
         _mockMediator.Verify(
             x => x.Send(It.IsAny<ObterTelemetriaQuery>(), It.IsAny<CancellationToken>()),

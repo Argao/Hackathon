@@ -1,8 +1,8 @@
+using Hackathon.Application.Exceptions;
 using Hackathon.Application.Handlers;
 using Hackathon.Application.Queries;
 using Hackathon.Application.Results;
 using Hackathon.Application.Services;
-using Hackathon.Domain.Exceptions;
 using Hackathon.Domain.Interfaces.Repositories;
 using Mapster;
 using MediatR;
@@ -61,7 +61,7 @@ public class ObterVolumeSimuladoHandlerTests
     }
 
     [Fact]
-    public async Task Handle_ComListaVazia_DeveLancarSimulacaoException()
+    public async Task Handle_ComListaVazia_DeveLancarNotFoundAppException()
     {
         // Arrange
         var query = new ObterVolumeSimuladoQuery(_dataReferencia);
@@ -71,7 +71,7 @@ public class ObterVolumeSimuladoHandlerTests
             .ReturnsAsync(new List<VolumeSimuladoProdutoDto>());
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<SimulacaoException>(
+        var exception = await Assert.ThrowsAsync<NotFoundAppException>(
             () => _handler.Handle(query, CancellationToken.None));
 
         exception.Message.Should().Contain("Nenhum dado de volume simulado encontrado");

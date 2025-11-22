@@ -4,6 +4,7 @@ using Hackathon.API.Contracts.Requests;
 using Hackathon.API.Contracts.Responses;
 using Hackathon.API.Mappings;
 using Hackathon.Application.Commands;
+using Hackathon.Application.Exceptions;
 using Hackathon.Application.Interfaces;
 using Hackathon.Application.Queries;
 using Hackathon.Application.Results;
@@ -169,28 +170,12 @@ public class SimulacaoControllerTests
 
         _mockMediator
             .Setup(x => x.Send(It.IsAny<ObterVolumeSimuladoQuery>(), It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new Hackathon.Domain.Exceptions.SimulacaoException("Nenhum dado de volume simulado encontrado para a data 2024-01-15"));
+            .ThrowsAsync(new Hackathon.Application.Exceptions.NotFoundAppException("Nenhum dado de volume simulado encontrado para a data 2024-01-15"));
 
-        // Act
-        var result = await _controller.ObterVolumePorDia(request, CancellationToken.None);
-
-        // Assert
-        result.Should().NotBeNull();
-        result.Result.Should().BeOfType<NotFoundObjectResult>();
-        
-        var notFoundResult = result.Result as NotFoundObjectResult;
-        notFoundResult!.Value.Should().NotBeNull();
-        
-        // Verificar as propriedades usando JsonElement
-        var jsonString = System.Text.Json.JsonSerializer.Serialize(notFoundResult.Value);
-        var jsonElement = System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.JsonElement>(jsonString);
-        
-        jsonElement.GetProperty("message").GetString().Should().Contain("Nenhum dado de volume simulado encontrado");
-        jsonElement.GetProperty("dataReferencia").GetString().Should().Be(dataReferencia.ToString("yyyy-MM-dd"));
-
-        _mockMediator.Verify(
-            x => x.Send(It.IsAny<ObterVolumeSimuladoQuery>(), It.IsAny<CancellationToken>()),
-            Times.Once);
+        // Act & Assert
+        var action = async () => await _controller.ObterVolumePorDia(request, CancellationToken.None);
+        await action.Should().ThrowAsync<NotFoundAppException>()
+            .WithMessage("*Nenhum dado de volume simulado encontrado*");
     }
 
     [Fact]

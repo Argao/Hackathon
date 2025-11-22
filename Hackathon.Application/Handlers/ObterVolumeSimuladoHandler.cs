@@ -27,7 +27,9 @@ public class ObterVolumeSimuladoHandler : IRequestHandler<ObterVolumeSimuladoQue
         
         if (!dadosAgregados.Any())
         {
-            throw new SimulacaoAppException($"Nenhum dado de volume simulado encontrado para a data {request.DataReferencia:yyyy-MM-dd}");
+            throw new NotFoundAppException(
+                message: $"Nenhum dado de volume simulado encontrado para a data {request.DataReferencia:yyyy-MM-dd}",
+                resourceId: request.DataReferencia.ToString("yyyy-MM-dd"));
         }
         
         var produtos = dadosAgregados.Select(dto => new VolumeSimuladoProdutoResult(
