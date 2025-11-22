@@ -1,7 +1,7 @@
 using Hackathon.Application.Commands;
+using Hackathon.Application.Exceptions;
 using Hackathon.Application.Interfaces;
 using Hackathon.Application.Results;
-using Hackathon.Domain.Exceptions;
 using Hackathon.Domain.Interfaces.Repositories;
 using Hackathon.Domain.ValueObjects;
 using Microsoft.Extensions.Logging;
@@ -48,7 +48,7 @@ public class SimulacaoOrchestrator : ISimulacaoOrchestrator
         // 1. Validar e converter (delegado para Command)
         var valueObjectsResult = command.ToValueObjects();
         if (!valueObjectsResult.IsSuccess)
-            throw new ValidationException(valueObjectsResult.Error);
+            throw new ApplicationValidationException(new[] { valueObjectsResult.Error });
 
         var (valorEmprestimo, prazoMeses) = valueObjectsResult.Value;
         var valorMonetario = ValorMonetario.Create(valorEmprestimo.Valor).Value;
@@ -56,7 +56,7 @@ public class SimulacaoOrchestrator : ISimulacaoOrchestrator
         // 2. Obter produto (delegado para serviço específico)
         var produto = await _produtoService.GetProdutoAdequadoAsync(valorMonetario, prazoMeses, cancellationToken);
         if (produto is null)
-            throw new SimulacaoException($"Nenhum produto disponível para valor {valorEmprestimo} e prazo {prazoMeses}");
+            throw new SimulacaoAppException($"Nenhum produto disponível para valor {valorEmprestimo} e prazo {prazoMeses}");
 
         // 3. Criar simulação (delegado para factory)
         var simulacao = _simulacaoFactory.CriarSimulacao(

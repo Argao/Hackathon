@@ -1,6 +1,6 @@
 using System.Net;
 using System.Text.Json;
-using Hackathon.Domain.Exceptions;
+using Hackathon.Application.Exceptions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 
@@ -40,30 +40,36 @@ public class GlobalExceptionHandler
 
         switch (exception)
         {
-            case ValidationException validationEx:
+            case ApplicationValidationException validationEx:
                 statusCode = HttpStatusCode.BadRequest;
                 message = "Erro de validação";
                 details = new { errors = validationEx.Errors };
                 break;
-            
-            case SimulacaoException simulacaoEx:
+
+            case SimulacaoAppException simulacaoEx:
                 statusCode = HttpStatusCode.UnprocessableEntity;
                 message = simulacaoEx.Message;
                 details = new { error = simulacaoEx.Message };
                 break;
-            
-            case ProdutoNotFoundException produtoEx:
+
+            case NotFoundAppException notFoundEx:
                 statusCode = HttpStatusCode.NotFound;
-                message = produtoEx.Message;
-                details = new { error = produtoEx.Message, codigoProduto = produtoEx.CodigoProduto };
+                message = notFoundEx.Message;
+                details = new { error = notFoundEx.Message, resourceId = notFoundEx.ResourceId };
                 break;
-            
-            case DomainException domainEx:
+
+            case BusinessRuleAppException businessRuleEx:
                 statusCode = HttpStatusCode.BadRequest;
-                message = domainEx.Message;
-                details = new { error = domainEx.Message };
+                message = businessRuleEx.Message;
+                details = new { error = businessRuleEx.Message, ruleCode = businessRuleEx.RuleCode };
                 break;
-            
+
+            case ApplicationExceptionBase appEx:
+                statusCode = HttpStatusCode.BadRequest;
+                message = appEx.Message;
+                details = new { error = appEx.Message };
+                break;
+
             default:
                 statusCode = HttpStatusCode.InternalServerError;
                 message = "Erro interno do servidor";

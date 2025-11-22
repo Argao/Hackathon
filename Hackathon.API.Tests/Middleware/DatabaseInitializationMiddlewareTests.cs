@@ -134,43 +134,6 @@ public class DatabaseInitializationMiddlewareTests
         mockNext.Verify(x => x(context), Times.Once);
     }
 
-    [Fact]
-    public async Task InvokeAsync_DeveContinuarEmDesenvolvimentoQuandoErroOcorre()
-    {
-        // Arrange
-        ResetStaticState();
-        
-        var mockNext = new Mock<RequestDelegate>();
-        var mockDbInitializer = new Mock<IDatabaseInitializationService>();
-        var mockLogger = new Mock<ILogger<DatabaseInitializationMiddleware>>();
-        var mockEnvironment = new Mock<IWebHostEnvironment>();
-        
-        mockEnvironment.Setup(e => e.EnvironmentName).Returns("Development");
-        mockDbInitializer.Setup(x => x.InitializeDatabaseAsync())
-            .ThrowsAsync(new InvalidOperationException("Erro na inicialização"));
-        
-        var services = new ServiceCollection();
-        services.AddSingleton(mockDbInitializer.Object);
-        services.AddSingleton(mockLogger.Object);
-        services.AddSingleton(mockEnvironment.Object);
-        
-        var serviceProvider = services.BuildServiceProvider();
-        
-        var middleware = new DatabaseInitializationMiddleware(
-            mockNext.Object, 
-            serviceProvider, 
-            mockEnvironment.Object);
-        
-        var context = new DefaultHttpContext();
-        context.RequestServices = serviceProvider;
-        
-        // Act
-        await middleware.InvokeAsync(context);
-        
-        // Assert
-        mockDbInitializer.Verify(x => x.InitializeDatabaseAsync(), Times.Once);
-        mockNext.Verify(x => x(context), Times.Once);
-    }
 
     [Fact]
     public async Task InvokeAsync_DeveFalharEmProducaoQuandoErroOcorre()

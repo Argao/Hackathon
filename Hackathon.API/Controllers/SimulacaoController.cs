@@ -75,20 +75,9 @@ public class SimulacaoController(IMediator mediator) : ControllerBase
         [FromQuery] VolumeSimuladoRequest request, 
         CancellationToken ct)
     {
-        try
-        {
-            var query = new ObterVolumeSimuladoQuery(request.DataReferencia);
-            var result = await mediator.Send(query, ct);
-            var response = result.Adapt<VolumeSimuladoResponse>();
-            return Ok(response);
-        }
-        catch (Hackathon.Domain.Exceptions.SimulacaoException ex) when (ex.Message.Contains("Nenhum dado de volume simulado encontrado"))
-        {
-            return NotFound(new 
-            { 
-                message = "Nenhum dado de volume simulado encontrado para a data especificada",
-                dataReferencia = request.DataReferencia.ToString("yyyy-MM-dd")
-            });
-        }
+        var query = new ObterVolumeSimuladoQuery(request.DataReferencia);
+        var result = await mediator.Send(query, ct);
+        var response = result.Adapt<VolumeSimuladoResponse>();
+        return Ok(response);
     }
 }

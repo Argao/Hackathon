@@ -1,7 +1,7 @@
 using FluentValidation;
+using Hackathon.Application.Exceptions;
 using Hackathon.Application.Interfaces;
 using MediatR;
-using DomainValidationException = Hackathon.Domain.Exceptions.ValidationException;
 
 namespace Hackathon.Application.Behaviors;
 
@@ -23,7 +23,7 @@ public class ValidationBehavior<TRequest, TResponse> : IPipelineBehavior<TReques
         if (!validationResult.IsValid)
         {
             var errors = validationResult.Errors.Select(e => e.ErrorMessage);
-            throw new DomainValidationException(errors);
+            throw new ApplicationValidationException(errors);
         }
 
         // Continuar pipeline se validação passou
