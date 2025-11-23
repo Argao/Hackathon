@@ -35,9 +35,9 @@ jobs:
           export PATH="$PATH:/github/home/.dotnet/tools"
           dotnet tool install --global dotnet-reportgenerator-globaltool
           reportgenerator \
-            "-reports:TestResults/**/coverage.cobertura.xml" \
+            "-reports:TestResults/**/coverage.opencover.xml" \
             "-targetdir:TestResults/coverage" \
-            -reporttypes:Cobertura
+            -reporttypes:"Cobertura;OpenCover"
 
       - name: Upload test artifacts
         if: always()
@@ -46,8 +46,8 @@ jobs:
           name: test-artifacts
           path: |
             TestResults/**/*.trx
-            TestResults/**/coverage.cobertura.xml
-            TestResults/coverage/Cobertura.xml
+            TestResults/**/coverage.opencover.xml
+            TestResults/coverage/index.html
 
       - name: Dependency audit
         run: |
@@ -70,5 +70,5 @@ jobs:
             -Dsonar.projectKey=Argao_Hackathon
             -Dsonar.organization=argao
             -Dsonar.cs.vstest.reportsPaths=TestResults/**/*.trx
-            -Dsonar.coverageReportPaths=TestResults/coverage/Cobertura.xml
+            -Dsonar.cs.opencover.reportsPaths=TestResults/**/coverage.opencover.xml
             -Dsonar.coverage.exclusions=**/Migrations/**,**/wwwroot/**,**/*.sql,**/Program.cs
