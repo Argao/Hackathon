@@ -34,9 +34,7 @@ public class SimulacaoController(IMediator mediator) : ControllerBase
     {
         var command = request.Adapt<RealizarSimulacaoCommand>();
         var result = await mediator.Send(command, ct);
-        
         var response = result.Adapt<SimulacaoResponse>();
-        
         return Ok(response);
     }
     

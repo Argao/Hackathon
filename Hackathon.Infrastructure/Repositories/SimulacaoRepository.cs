@@ -14,8 +14,7 @@ public class SimulacaoRepository(AppDbContext context) : ISimulacaoRepository
         context.ChangeTracker.AutoDetectChangesEnabled = false;
         
         context.Simulacoes.Add(simulacao);
-        
-        // ✅ OTIMIZAÇÃO: Usar SaveChangesAsync com configuração otimizada
+
         await context.SaveChangesAsync(ct);
         
         context.ChangeTracker.AutoDetectChangesEnabled = true;

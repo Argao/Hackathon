@@ -21,6 +21,24 @@ jobs:
       - run: dotnet restore
       - run: dotnet build --configuration Release
 
+      - name: Run tests with coverage
+        run: |
+          dotnet test Hackathon.sln \
+            --configuration Release \
+            --logger trx \
+            --results-directory TestResults \
+            --settings coverlet.runsettings \
+            --collect:"XPlat Code Coverage"
+
+      - name: Upload test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-artifacts
+          path: |
+            TestResults/**/*.trx
+            TestResults/**/coverage.cobertura.xml
+
       - name: Dependency audit
         run: |
           set -e
@@ -41,3 +59,6 @@ jobs:
           args: >
             -Dsonar.projectKey=Argao_Hackathon
             -Dsonar.organization=argao
+            -Dsonar.cs.vstest.reportsPaths=TestResults/**/*.trx
+            -Dsonar.coverageReportPaths=TestResults/**/coverage.cobertura.xml
+            -Dsonar.coverage.exclusions=**/Migrations/**,**/wwwroot/**,**/*.sql,**/Program.cs
