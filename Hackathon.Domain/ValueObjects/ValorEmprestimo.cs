@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace Hackathon.Domain.ValueObjects;
 
 /// <summary>
@@ -5,6 +7,7 @@ namespace Hackathon.Domain.ValueObjects;
 /// </summary>
 public readonly record struct ValorEmprestimo
 {
+    private static readonly CultureInfo CulturaBrasileira = new("pt-BR");
     private const decimal VALOR_MINIMO = RegrasNegocio.Valores.VALOR_MINIMO_EMPRESTIMO;
     private const decimal VALOR_MAXIMO = RegrasNegocio.Valores.VALOR_MAXIMO_EMPRESTIMO;
     
@@ -20,10 +23,10 @@ public readonly record struct ValorEmprestimo
     public static Result<ValorEmprestimo> Create(decimal valor)
     {
         if (valor < VALOR_MINIMO)
-            return Result<ValorEmprestimo>.Failure($"Valor deve ser maior ou igual a {VALOR_MINIMO:C}");
+            return Result<ValorEmprestimo>.Failure($"Valor deve ser maior ou igual a {VALOR_MINIMO.ToString("C", CulturaBrasileira)}");
 
         if (valor > VALOR_MAXIMO)
-            return Result<ValorEmprestimo>.Failure($"Valor não pode exceder {VALOR_MAXIMO:C}");
+            return Result<ValorEmprestimo>.Failure($"Valor não pode exceder {VALOR_MAXIMO.ToString("C", CulturaBrasileira)}");
 
         return Result<ValorEmprestimo>.Success(new ValorEmprestimo(valor));
     }
@@ -33,5 +36,5 @@ public readonly record struct ValorEmprestimo
     /// </summary>
     public static implicit operator decimal(ValorEmprestimo valor) => valor.Valor;
 
-    public override string ToString() => Valor.ToString("C");
+    public override string ToString() => Valor.ToString("C", CulturaBrasileira);
 }
