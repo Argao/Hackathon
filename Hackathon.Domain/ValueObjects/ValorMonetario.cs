@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace Hackathon.Domain.ValueObjects;
 
 /// <summary>
@@ -5,6 +7,7 @@ namespace Hackathon.Domain.ValueObjects;
 /// </summary>
 public readonly record struct ValorMonetario
 {
+    private static readonly CultureInfo CulturaBrasileira = new("pt-BR");
     private const decimal VALOR_MINIMO = RegrasNegocio.Valores.VALOR_MINIMO_MONETARIO;
     private const decimal VALOR_MAXIMO = RegrasNegocio.Valores.VALOR_MAXIMO_MONETARIO;
     
@@ -20,10 +23,10 @@ public readonly record struct ValorMonetario
     public static Result<ValorMonetario> Create(decimal valor)
     {
         if (valor < VALOR_MINIMO)
-            return Result<ValorMonetario>.Failure($"Valor monetário deve ser maior ou igual a {VALOR_MINIMO:C}");
+            return Result<ValorMonetario>.Failure($"Valor monetário deve ser maior ou igual a {VALOR_MINIMO.ToString("C", CulturaBrasileira)}");
 
         if (valor > VALOR_MAXIMO)
-            return Result<ValorMonetario>.Failure($"Valor monetário não pode exceder {VALOR_MAXIMO:C}");
+            return Result<ValorMonetario>.Failure($"Valor monetário não pode exceder {VALOR_MAXIMO.ToString("C", CulturaBrasileira)}");
 
         return Result<ValorMonetario>.Success(new ValorMonetario(valor));
     }
@@ -73,5 +76,5 @@ public readonly record struct ValorMonetario
     /// </summary>
     public ValorMonetario ArredondarFinanceiro() => new(decimal.Round(Valor, 2, MidpointRounding.AwayFromZero));
 
-    public override string ToString() => Valor.ToString("C");
+    public override string ToString() => Valor.ToString("C", CulturaBrasileira);
 }

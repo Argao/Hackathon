@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace Hackathon.Domain.ValueObjects;
 
 /// <summary>
@@ -5,6 +7,7 @@ namespace Hackathon.Domain.ValueObjects;
 /// </summary>
 public readonly record struct TaxaJuros
 {
+    private static readonly CultureInfo CulturaBrasileira = new("pt-BR");
     private const decimal TAXA_MINIMA = RegrasNegocio.Taxas.TAXA_MINIMA;
     private const decimal TAXA_MAXIMA = RegrasNegocio.Taxas.TAXA_MAXIMA;
     
@@ -20,10 +23,10 @@ public readonly record struct TaxaJuros
     public static Result<TaxaJuros> Create(decimal taxa)
     {
         if (taxa < TAXA_MINIMA)
-            return Result<TaxaJuros>.Failure($"Taxa deve ser maior ou igual a {TAXA_MINIMA:P6}");
+            return Result<TaxaJuros>.Failure($"Taxa deve ser maior ou igual a {TAXA_MINIMA.ToString("P6", CulturaBrasileira)}");
 
         if (taxa > TAXA_MAXIMA)
-            return Result<TaxaJuros>.Failure($"Taxa não pode exceder {TAXA_MAXIMA:P2} ao mês");
+            return Result<TaxaJuros>.Failure($"Taxa não pode exceder {TAXA_MAXIMA.ToString("P2", CulturaBrasileira)} ao mês");
 
         return Result<TaxaJuros>.Success(new TaxaJuros(taxa));
     }
@@ -55,5 +58,5 @@ public readonly record struct TaxaJuros
     public static TaxaJuros operator -(TaxaJuros a, TaxaJuros b) => new(a.Taxa - b.Taxa);
     public static TaxaJuros operator *(TaxaJuros a, decimal multiplicador) => new(a.Taxa * multiplicador);
 
-    public override string ToString() => Taxa.ToString("P4");
+    public override string ToString() => Taxa.ToString("P4", CulturaBrasileira);
 }
