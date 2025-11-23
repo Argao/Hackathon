@@ -1,1 +1,15 @@
-﻿
+﻿<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat Code Coverage">
+        <Configuration>
+          <Format>cobertura</Format>
+          <IncludeTestAssembly>false</IncludeTestAssembly>
+          <ExcludeByFile>**/Migrations/*.cs;**/obj/**;**/bin/**;**/Program.cs;**/GlobalUsings.cs</ExcludeByFile>
+          <Exclude>[Hackathon.Infrastructure]*.Migrations.*</Exclude>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>
