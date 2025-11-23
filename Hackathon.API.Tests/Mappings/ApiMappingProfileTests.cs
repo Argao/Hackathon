@@ -5,6 +5,7 @@ using Hackathon.API.Mappings;
 using Hackathon.Application.Commands;
 using Hackathon.Application.Queries;
 using Hackathon.Application.Results;
+using Hackathon.API.Tests.Mappings;
 using Mapster;
 
 namespace Hackathon.API.Tests.Mappings;
@@ -13,16 +14,13 @@ public class ApiMappingProfileTests
 {
     public ApiMappingProfileTests()
     {
-        // Configurar o Mapster antes de cada teste
-        ApiMappingProfile.Configure();
-        TypeAdapterConfig.GlobalSettings.Compile();
+        MapsterTestConfig.EnsureConfigured();
     }
 
     [Fact]
     public void Configure_DeveConfigurarMapeamentosSemErro()
     {
-        // Act & Assert
-        var action = () => ApiMappingProfile.Configure();
+        var action = () => MapsterTestConfig.EnsureConfigured();
         action.Should().NotThrow();
     }
 

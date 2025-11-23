@@ -71,7 +71,7 @@ builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddApplicationServices();
 
 // Configure API Mappings
-ApiMappingProfile.Configure();
+ApiMappingProfile.Configure(TypeAdapterConfig.GlobalSettings);
 
 TypeAdapterConfig.GlobalSettings.Compile();
 

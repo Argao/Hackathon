@@ -12,6 +12,7 @@ using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
+using Hackathon.API.Tests.Mappings;
 using Mapster;
 
 namespace Hackathon.API.Tests.Controllers;
@@ -23,10 +24,7 @@ public class SimulacaoControllerTests
 
     public SimulacaoControllerTests()
     {
-        // Configurar o Mapster antes de cada teste
-        ApiMappingProfile.Configure();
-        TypeAdapterConfig.GlobalSettings.Compile();
-        
+        MapsterTestConfig.EnsureConfigured();
         _mockMediator = new Mock<IMediator>();
         _controller = new SimulacaoController(_mockMediator.Object);
     }
@@ -61,12 +59,10 @@ public class SimulacaoControllerTests
         result.Should().NotBeNull();
         result.Result.Should().BeOfType<OkObjectResult>();
         
-        var okResult = result.Result as OkObjectResult;
-        okResult!.Value.Should().BeOfType<SimulacaoResponse>();
-        
-        var response = okResult.Value as SimulacaoResponse;
-        response!.IdSimulacao.Should().Be(simulacaoId);
-        response.ResultadoSimulacao.Should().HaveCount(2);
+        var response = result.Result as OkObjectResult;
+        var simulacaoResponse = response!.Value as SimulacaoResponse;
+        simulacaoResponse!.IdSimulacao.Should().Be(simulacaoId);
+        simulacaoResponse.ResultadoSimulacao.Should().HaveCount(2);
 
         _mockMediator.Verify(
             x => x.Send(It.IsAny<RealizarSimulacaoCommand>(), It.IsAny<CancellationToken>()),
@@ -110,13 +106,11 @@ public class SimulacaoControllerTests
         result.Result.Should().BeOfType<OkObjectResult>();
         
         var okResult = result.Result as OkObjectResult;
-        okResult!.Value.Should().BeOfType<ListarSimulacoesResponse>();
-        
-        var response = okResult.Value as ListarSimulacoesResponse;
-        response!.Pagina.Should().Be(pagedResult.CurrentPage);
-        response.QtdRegistros.Should().Be(pagedResult.TotalItems);
-        response.QtdRegistrosPagina.Should().Be(pagedResult.PageSize);
-        response.Registros.Should().HaveCount(pagedResult.Items.Count());
+        var simulacoesResponse = okResult!.Value as ListarSimulacoesResponse;
+        simulacoesResponse!.Pagina.Should().Be(pagedResult.CurrentPage);
+        simulacoesResponse.QtdRegistros.Should().Be(pagedResult.TotalItems);
+        simulacoesResponse.QtdRegistrosPagina.Should().Be(pagedResult.PageSize);
+        simulacoesResponse.Registros.Should().HaveCount(pagedResult.Items.Count());
 
         _mockMediator.Verify(
             x => x.Send(It.IsAny<ListarSimulacoesQuery>(), It.IsAny<CancellationToken>()),
@@ -150,11 +144,9 @@ public class SimulacaoControllerTests
         result.Result.Should().BeOfType<OkObjectResult>();
         
         var okResult = result.Result as OkObjectResult;
-        okResult!.Value.Should().BeOfType<VolumeSimuladoResponse>();
-        
-        var response = okResult.Value as VolumeSimuladoResponse;
-        response!.DataReferencia.Should().Be(dataReferencia.ToString("yyyy-MM-dd"));
-        response.Simulacoes.Should().HaveCount(1);
+        var volumeResponse = okResult!.Value as VolumeSimuladoResponse;
+        volumeResponse!.DataReferencia.Should().Be(dataReferencia.ToString("yyyy-MM-dd"));
+        volumeResponse.Simulacoes.Should().HaveCount(1);
 
         _mockMediator.Verify(
             x => x.Send(It.IsAny<ObterVolumeSimuladoQuery>(), It.IsAny<CancellationToken>()),
