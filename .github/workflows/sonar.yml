@@ -18,7 +18,27 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
+      - name: Install global tools
+        run: |
+          dotnet tool install --global dotnet-sonarscanner
+          dotnet tool install --global dotnet-reportgenerator-globaltool
+          echo "${HOME}/.dotnet/tools" >> $GITHUB_PATH
+
       - run: dotnet restore
+
+      - name: SonarCloud Begin
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          dotnet sonarscanner begin \
+            /k:"Argao_Hackathon" \
+            /o:"argao" \
+            /d:sonar.host.url="https://sonarcloud.io" \
+            /d:sonar.login="$SONAR_TOKEN" \
+            /d:sonar.cs.vstest.reportsPaths="TestResults/**/*.trx" \
+            /d:sonar.cs.opencover.reportsPaths="TestResults/**/coverage.opencover.xml" \
+            /d:sonar.coverage.exclusions="**/Migrations/**,**/wwwroot/**,**/*.sql,**/Program.cs"
+
       - run: dotnet build --configuration Release
 
       - name: Run tests with coverage
@@ -32,12 +52,16 @@ jobs:
 
       - name: Merge coverage reports
         run: |
-          export PATH="$PATH:/github/home/.dotnet/tools"
-          dotnet tool install --global dotnet-reportgenerator-globaltool
           reportgenerator \
             "-reports:TestResults/**/coverage.opencover.xml" \
             "-targetdir:TestResults/coverage" \
             -reporttypes:"Cobertura;OpenCover"
+
+      - name: SonarCloud End
+        if: always()
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: dotnet sonarscanner end /d:sonar.login="$SONAR_TOKEN"
 
       - name: Upload test artifacts
         if: always()
@@ -59,16 +83,3 @@ jobs:
             exit 1
           fi
           echo 'No Critical dependency vulnerabilities found.'
-
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        with:
-          args: >
-            -Dsonar.projectKey=Argao_Hackathon
-            -Dsonar.organization=argao
-            -Dsonar.cs.vstest.reportsPaths=TestResults/**/*.trx
-            -Dsonar.cs.opencover.reportsPaths=TestResults/**/coverage.opencover.xml
-            -Dsonar.coverage.exclusions=**/Migrations/**,**/wwwroot/**,**/*.sql,**/Program.cs
