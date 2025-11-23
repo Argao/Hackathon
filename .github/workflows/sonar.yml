@@ -30,6 +30,15 @@ jobs:
             --settings coverlet.runsettings \
             --collect:"XPlat Code Coverage"
 
+      - name: Merge coverage reports
+        run: |
+          export PATH="$PATH:/github/home/.dotnet/tools"
+          dotnet tool install --global dotnet-reportgenerator-globaltool
+          reportgenerator \
+            "-reports:TestResults/**/coverage.cobertura.xml" \
+            "-targetdir:TestResults/coverage" \
+            -reporttypes:Cobertura
+
       - name: Upload test artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -38,6 +47,7 @@ jobs:
           path: |
             TestResults/**/*.trx
             TestResults/**/coverage.cobertura.xml
+            TestResults/coverage/Cobertura.xml
 
       - name: Dependency audit
         run: |
@@ -60,5 +70,5 @@ jobs:
             -Dsonar.projectKey=Argao_Hackathon
             -Dsonar.organization=argao
             -Dsonar.cs.vstest.reportsPaths=TestResults/**/*.trx
-            -Dsonar.coverageReportPaths=TestResults/**/coverage.cobertura.xml
+            -Dsonar.coverageReportPaths=TestResults/coverage/Cobertura.xml
             -Dsonar.coverage.exclusions=**/Migrations/**,**/wwwroot/**,**/*.sql,**/Program.cs
