@@ -4,7 +4,7 @@
     <DataCollectors>
       <DataCollector friendlyName="XPlat Code Coverage">
         <Configuration>
-          <Format>cobertura</Format>
+          <Format>opencover</Format>
           <IncludeTestAssembly>false</IncludeTestAssembly>
           <ExcludeByFile>**/Migrations/*.cs;**/obj/**;**/bin/**;**/Program.cs;**/GlobalUsings.cs</ExcludeByFile>
           <Exclude>[Hackathon.Infrastructure]*.Migrations.*</Exclude>
